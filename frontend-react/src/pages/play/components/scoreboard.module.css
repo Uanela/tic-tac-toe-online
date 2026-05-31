@@ -1,0 +1,89 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.card.active {
+  box-shadow: 0 0 20px -4px currentColor;
+}
+
+.card.x.active {
+  border-color: rgba(245, 197, 106, 0.5);
+  box-shadow: 0 0 20px -4px rgba(245, 197, 106, 0.35);
+}
+
+.card.o.active {
+  border-color: rgba(106, 245, 197, 0.5);
+  box-shadow: 0 0 20px -4px rgba(106, 245, 197, 0.35);
+}
+
+.mark {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.x .mark {
+  color: var(--x-color);
+}
+.o .mark {
+  color: var(--o-color);
+}
+
+.name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.turnDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+.vs {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}

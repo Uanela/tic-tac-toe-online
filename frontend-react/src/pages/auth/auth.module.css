@@ -1,0 +1,66 @@
+.page {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.heading h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.heading p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.footer {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.footer a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}

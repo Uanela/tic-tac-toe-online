@@ -1,0 +1,22 @@
+enum GameType {
+  TicTacToe
+}
+
+enum GameResult {
+  PlayerOneWin
+  PlayerTwoWin
+  Draw
+}
+
+model Game {
+  id          String      @id @default(cuid())
+  type        GameType
+  playerOneId String
+  playerTwoId String
+  result      GameResult?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  playerOne Player @relation("PlayerOne", fields: [playerOneId], references: [id])
+  playerTwo Player @relation("PlayerTwo", fields: [playerTwoId], references: [id])
+}

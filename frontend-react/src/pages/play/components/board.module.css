@@ -1,0 +1,55 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.cell {
+  aspect-ratio: 1;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--muted);
+  cursor: default;
+  transition: all 0.15s ease;
+  font-family: var(--font-display);
+}
+
+.hoverable:not(:disabled):hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  cursor: pointer;
+}
+
+.cell.x {
+  color: var(--x-color);
+  border-color: rgba(245, 197, 106, 0.3);
+  background: rgba(245, 197, 106, 0.06);
+}
+
+.cell.o {
+  color: var(--o-color);
+  border-color: rgba(106, 245, 197, 0.3);
+  background: rgba(106, 245, 197, 0.06);
+}
+
+.pop {
+  animation: pop 0.2s ease;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

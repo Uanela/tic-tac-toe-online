@@ -1,0 +1,120 @@
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap");
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a26;
+  --border: #2a2a3d;
+  --text: #e8e8f0;
+  --muted: #6b6b8a;
+  --accent: #7c6af5;
+  --accent-glow: rgba(124, 106, 245, 0.25);
+  --x-color: #f5c56a;
+  --o-color: #6af5c5;
+  --error: #f56a7c;
+  --success: #6af5b0;
+  --font-display: "Syne", sans-serif;
+  --font-mono: "DM Mono", monospace;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-display);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input {
+  font-family: var(--font-mono);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.18s ease;
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn:hover:not(:disabled) {
+  background: #9080ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px var(--accent-glow);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: none;
+  transform: none;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.9rem;
+  transition: border-color 0.18s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.error-msg {
+  color: var(--error);
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+}

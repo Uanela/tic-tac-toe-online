@@ -1,0 +1,164 @@
+.page {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px;
+  gap: 20px;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background 0.3s;
+}
+
+.dot.connected {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+
+.statusText {
+  text-transform: capitalize;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.joinInfo {
+  display: flex;
+  justify-content: center;
+}
+
+.playerCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 40px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.playerMark {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.playerNick {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.playerXp {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.waitingDots {
+  display: flex;
+  gap: 10px;
+}
+
+.waitingDots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.waitingDots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.waitingDots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+}
+
+.turnBanner {
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.myTurn {
+  background: rgba(124, 106, 245, 0.15);
+  border: 1px solid rgba(124, 106, 245, 0.35);
+  color: var(--accent);
+}
+
+.theirTurn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.gate {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 24px;
+}
+
+.gate h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.gate p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.gateCta {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}

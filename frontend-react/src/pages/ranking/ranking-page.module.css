@@ -1,0 +1,141 @@
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 60px 24px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.header p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-family: var(--font-mono);
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thead {
+  display: grid;
+  grid-template-columns: 48px 1fr 90px 48px 48px 48px 60px;
+  gap: 8px;
+  padding: 8px 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 48px 1fr 90px 48px 48px 48px 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 14px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+
+.row:hover {
+  background: var(--surface2);
+}
+
+.top1 {
+  border-color: #f5c56a44;
+}
+.top2 {
+  border-color: #c0c0c044;
+}
+.top3 {
+  border-color: #cd7f3244;
+}
+
+.rank {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.nick {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.xp {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.wins {
+  color: var(--success);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.losses {
+  color: var(--error);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.draws {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.pct {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.skeleton {
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.pageInfo {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+}

@@ -1,0 +1,82 @@
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 0 40px;
+  height: 64px;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.x {
+  color: var(--x-color);
+}
+.o {
+  color: var(--o-color);
+}
+.sep {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.links {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+
+.link {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: var(--text);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.xp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.xpDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.nick {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
