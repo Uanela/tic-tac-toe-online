@@ -7,14 +7,6 @@ const tictactoeGateway = ArkosGateway({
   dedup: false,
 });
 
-tictactoeGateway.hook("connection", () => {
-  console.log("trying connect");
-});
-
-tictactoeGateway.pipe((_, data) => {
-  console.log(data, "the pipe");
-});
-
 tictactoeGateway.on({ event: "join_game", ack: true }, (socket, data, ack) => {
   ticTacToeController.joinGame(socket, data, ack, tictactoeGateway);
 });

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@arkosjs/react-websockets':
-        specifier: file:../../arkos/integrations/react-websockets
-        version: file:../../arkos/integrations/react-websockets(@arkosjs/websockets-client@0.1.0-canary.3(socket.io-client@4.8.3))(react@19.2.6)(socket.io-client@4.8.3)
+        specifier: 0.1.0-canary.10
+        version: 0.1.0-canary.10(@arkosjs/websockets-client@0.1.0-canary.3(socket.io-client@4.8.3))(react@19.2.6)(socket.io-client@4.8.3)
       '@arkosjs/websockets-client':
         specifier: 0.1.0-canary.3
         version: 0.1.0-canary.3(socket.io-client@4.8.3)
@@ -66,8 +66,8 @@ importers:
 
 packages:
 
-  '@arkosjs/react-websockets@file:../../arkos/integrations/react-websockets':
-    resolution: {directory: ../../arkos/integrations/react-websockets, type: directory}
+  '@arkosjs/react-websockets@0.1.0-canary.10':
+    resolution: {integrity: sha512-qX/PAumE2wUxKzA5qIerlqjsUKea42l2SBODHZXoaDYSH5sLQSrcFUILlP+ISJOoTXkbFXBd5j0RVxBVOwOh9w==}
     peerDependencies:
       '@arkosjs/websockets-client': '*'
       react: '>=17.0.0'
@@ -999,7 +999,7 @@ packages:
 
 snapshots:
 
-  '@arkosjs/react-websockets@file:../../arkos/integrations/react-websockets(@arkosjs/websockets-client@0.1.0-canary.3(socket.io-client@4.8.3))(react@19.2.6)(socket.io-client@4.8.3)':
+  '@arkosjs/react-websockets@0.1.0-canary.10(@arkosjs/websockets-client@0.1.0-canary.3(socket.io-client@4.8.3))(react@19.2.6)(socket.io-client@4.8.3)':
     dependencies:
       '@arkosjs/websockets-client': 0.1.0-canary.3(socket.io-client@4.8.3)
       react: 19.2.6

@@ -65,11 +65,6 @@ class TicTacToeController extends ArkosGatewayController {
 
       const base = { roomId, board: room.board, currentTurn: room.currentTurn };
 
-      console.log("gamestart", {
-        ...base,
-        yourMark: "X",
-        opponentNickname: nickname,
-      });
       gatewayRef.socket(playerX.socketId).emit("game_start", {
         ...base,
         yourMark: "X",
