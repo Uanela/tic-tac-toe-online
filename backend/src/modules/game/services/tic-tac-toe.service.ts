@@ -22,6 +22,20 @@ export interface GameRoom {
   status: "playing" | "finished";
 }
 
+export interface Invite {
+  id: string;
+  fromUserId: string;
+  fromPlayerId: string;
+  fromSocketId: string;
+  fromNickname: string;
+  toUserId: string;
+  toPlayerId: string;
+  toSocketId: string;
+  toNickname: string;
+  expiresAt: number;
+  timer: NodeJS.Timeout;
+}
+
 const WIN_LINES = [
   [0, 1, 2],
   [3, 4, 5],
@@ -41,6 +55,31 @@ class TicTacToeService {
     playerId: string;
     nickname: string;
   } | null = null;
+  private invites = new Map<string, Invite>();
+  private waitingTimer: NodeJS.Timeout | null = null;
+
+  getInvite(id: string) {
+    return this.invites.get(id);
+  }
+  setInvite(id: string, invite: Invite) {
+    this.invites.set(id, invite);
+  }
+  deleteInvite(id: string) {
+    this.invites.delete(id);
+  }
+
+  findInviteBySocket(socketId: string) {
+    for (const inv of this.invites.values()) {
+      if (inv.fromSocketId === socketId || inv.toSocketId === socketId)
+        return inv;
+    }
+    return null;
+  }
+
+  setWaitingTimer(t: NodeJS.Timeout | null) {
+    if (this.waitingTimer) clearTimeout(this.waitingTimer);
+    this.waitingTimer = t;
+  }
 
   emptyBoard(): Board {
     return Array(9).fill(null);

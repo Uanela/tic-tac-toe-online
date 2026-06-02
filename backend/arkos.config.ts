@@ -1,5 +1,7 @@
 import { defineConfig } from "arkos/config";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const arkosConfig = defineConfig({
   source: {
     entryPoint: "src/server.ts",
@@ -21,7 +23,10 @@ const arkosConfig = defineConfig({
     strict: false,
   },
   middlewares: {
-    cors: {},
+    cors: {
+      origin: isProduction ? process.env.CORS_ORIGIN?.split(",") : true,
+      credentials: true,
+    },
   },
   debugging: {
     requests: {

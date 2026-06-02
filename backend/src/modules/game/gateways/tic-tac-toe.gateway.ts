@@ -7,16 +7,26 @@ const tictactoeGateway = ArkosGateway({
   dedup: false,
 });
 
-tictactoeGateway.on({ event: "join_game", ack: true }, (socket, data, ack) => {
-  ticTacToeController.joinGame(socket, data, ack, tictactoeGateway);
-});
-
-tictactoeGateway.on({ event: "make_move", ack: true }, (socket, data, ack) => {
-  ticTacToeController.makeMove(socket, data, ack, tictactoeGateway);
-});
-
-tictactoeGateway.hook("disconnect", (socket) => {
-  ticTacToeController.onDisconnect(socket, tictactoeGateway);
-});
+tictactoeGateway.on(
+  { event: "join_game", ack: true },
+  ticTacToeController.joinGame
+);
+tictactoeGateway.on(
+  { event: "send_invite", ack: true },
+  ticTacToeController.sendInvite
+);
+tictactoeGateway.on(
+  { event: "accept_invite", ack: true },
+  ticTacToeController.acceptInvite
+);
+tictactoeGateway.on(
+  { event: "decline_invite", ack: true },
+  ticTacToeController.declineInvite
+);
+tictactoeGateway.on(
+  { event: "make_move", ack: true },
+  ticTacToeController.makeMove
+);
+tictactoeGateway.hook("disconnect", ticTacToeController.onDisconnect);
 
 export default tictactoeGateway;
