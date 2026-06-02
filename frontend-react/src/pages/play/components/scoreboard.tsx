@@ -9,14 +9,7 @@ interface ScoreboardProps {
   myMark: Mark | null;
 }
 
-export function Scoreboard({
-  nameX,
-  nameO,
-  currentTurn,
-  myMark,
-}: ScoreboardProps) {
-  const isMyTurn = currentTurn === myMark;
-
+export function Scoreboard({ nameX, nameO, currentTurn }: ScoreboardProps) {
   return (
     <div className={styles.root}>
       <div

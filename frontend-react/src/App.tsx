@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./utils/contexts/auth.context";
-import { Navbar } from "./components/navbar";
+import { Layout } from "./components/layout";
 import HomePage from "./pages/home.page";
 import LoginPage from "./pages/auth/login.page";
 import SignupPage from "./pages/auth/signup.page";
@@ -13,15 +13,16 @@ export default function App() {
     <AuthProvider>
       <Providers>
         <BrowserRouter>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/auth/login" element={<LoginPage />} />
-            <Route path="/auth/signup" element={<SignupPage />} />
-            <Route path="/ranking" element={<RankingPage />} />
-            <Route path="/play" element={<PlayPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/auth/login" element={<LoginPage />} />
+              <Route path="/auth/signup" element={<SignupPage />} />
+              <Route path="/ranking" element={<RankingPage />} />
+              <Route path="/play" element={<PlayPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
         </BrowserRouter>
       </Providers>
     </AuthProvider>
