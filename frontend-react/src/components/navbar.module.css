@@ -4,10 +4,9 @@
   z-index: 100;
   display: flex;
   align-items: center;
-  gap: 32px;
-  padding: 0 40px;
-  height: 64px;
-  background: rgba(10, 10, 15, 0.85);
+  padding: 0 16px;
+  height: 56px;
+  background: rgba(10, 10, 15, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
@@ -15,8 +14,8 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 1.4rem;
+  gap: 5px;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -29,54 +28,123 @@
 }
 .sep {
   color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.links {
-  display: flex;
-  gap: 24px;
-  flex: 1;
-}
-
-.link {
-  color: var(--muted);
-  font-size: 0.88rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  transition: color 0.15s;
-}
-
-.link:hover {
-  color: var(--text);
+  font-size: 0.8rem;
 }
 
 .right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   margin-left: auto;
 }
 
 .xp {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--accent);
 }
 
 .xpDot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
 }
 
 .nick {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--text);
+  border-radius: 2px;
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
+}
+
+.hamburger.open span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+}
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.drawer {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.25s ease,
+    padding 0.25s ease;
+}
+
+.drawer.open {
+  max-height: 200px;
+  padding: 12px 0 16px;
+}
+
+.drawerLink {
+  display: block;
+  padding: 11px 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.drawerLink:hover {
+  color: var(--text);
+}
+
+.drawerLogout {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 8px 20px 0;
+  padding: 10px;
+  text-align: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
 }

@@ -47,10 +47,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.log(err);
     }
-    // do NOT disconnect on cleanup — Layout lives for the whole session
   }, [user]);
 
-  // ── global invite listeners ───────────────────────────────────────────────
   game.on<InviteReceivedData>("invite_received", (data) => {
     setPendingInvite(data);
   });
