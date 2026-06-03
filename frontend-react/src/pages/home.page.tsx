@@ -52,7 +52,6 @@ export default function HomePage() {
             </>
           )}
         </div>
-
         {player && (
           <div className={styles.statsBar}>
             <Stat label="XP" value={player.xp} color="var(--accent)" />
@@ -75,10 +74,12 @@ export default function HomePage() {
             <div key={p.id} className={styles.rankRow}>
               <span className={styles.rankPos}>{i + 1}</span>
               <span className={styles.rankNick}>{p.nickname}</span>
-              <span className={styles.rankXp}>{p.xp} xp</span>
-              <span className={styles.rankRecord}>
-                {p.wins}W · {p.losses}L · {p.draws}D
-              </span>
+              <div className={styles.rankMeta}>
+                <span className={styles.rankXp}>{p.xp} xp</span>
+                <span className={styles.rankRecord}>
+                  {p.wins}W · {p.losses}L · {p.draws}D
+                </span>
+              </div>
             </div>
           ))}
           {top.length === 0 && (
