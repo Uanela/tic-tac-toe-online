@@ -384,7 +384,7 @@ class TicTacToeController extends ArkosGatewayController {
     room.board[index] = player.mark;
     room.currentTurn = player.mark === "X" ? "O" : "X";
 
-    socket.emit("move_made", {
+    socket.nsp.to(roomId).emit("move_made", {
       board: room.board,
       index,
       mark: player.mark,

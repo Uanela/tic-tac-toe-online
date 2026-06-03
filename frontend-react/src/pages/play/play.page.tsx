@@ -279,6 +279,7 @@ export default function PlayPage() {
 
     const result = await moveEmitter.emit({ roomId, index }, { ack: true });
     if (!result?.success) setBoard(prev);
+    setCurrentTurn(currentTurn === "X" ? "O" : "X");
   }
 
   function handlePlayAgain() {
