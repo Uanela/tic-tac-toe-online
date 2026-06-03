@@ -416,8 +416,8 @@ class TicTacToeController extends ArkosGatewayController {
     await ticTacToeService.finishGame(
       room.gameId,
       gameResult,
-      winnerPlayer?.playerId ?? null,
-      loserPlayer?.playerId ?? null
+      winnerPlayer?.playerId ?? room.players[0].playerId,
+      loserPlayer?.playerId ?? room.players[1].playerId
     );
 
     // Emit to the entire room (both players see board + winner name)
