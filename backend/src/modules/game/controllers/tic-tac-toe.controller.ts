@@ -174,8 +174,8 @@ class TicTacToeController extends ArkosGatewayController {
       return ack?.({ success: false, error: "Player profile not found." });
 
     // Guard: sender already in a game?
-    if (this.activeRoomId(socket, userId))
-      return ack?.({ success: false, error: "You are already in a game." });
+    // if (this.activeRoomId(socket, userId))
+    //   return ack?.({ success: false, error: "You are already in a game." });
 
     // Guard: target online?
     const targetOnline = await socket.user(data.targetUserId).isOnline();
@@ -183,11 +183,11 @@ class TicTacToeController extends ArkosGatewayController {
       return ack?.({ success: false, error: "That player is not online." });
 
     // Guard: target already in a game?
-    if (this.activeRoomId(socket, data.targetUserId))
-      return ack?.({
-        success: false,
-        error: "That player is already in a game.",
-      });
+    // if (this.activeRoomId(socket, data.targetUserId))
+    //   return ack?.({
+    //     success: false,
+    //     error: "That player is already in a game.",
+    //   });
 
     const targetPlayer = await ticTacToeService.resolvePlayer(
       data.targetUserId
@@ -222,7 +222,7 @@ class TicTacToeController extends ArkosGatewayController {
       // Notify target
       socket.peer(targetSocketId).emit("invite_expired", {
         inviteId,
-        message: "Invite from ${player.nickname} expired.",
+        message: `Invite from ${player.nickname} expired.`,
       });
     }, INVITE_TIMEOUT_MS);
 
