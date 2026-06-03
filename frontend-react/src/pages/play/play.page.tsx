@@ -220,7 +220,9 @@ export default function PlayPage() {
       { ack: true }
     );
     setInvitingId(null);
-    if (!result?.success) return;
+
+    if (!result?.success)
+      return setToast(result.error || "Couldn't send invite");
     setSentInviteId(result.data.inviteId);
     setSearchQuery("");
     setSearchResults([]);
