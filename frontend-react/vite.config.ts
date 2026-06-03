@@ -10,4 +10,7 @@ export default defineConfig({
       "react-dom": path.resolve("./node_modules/react-dom"),
     },
   },
+  server: {
+    allowedHosts: true,
+  },
 });
