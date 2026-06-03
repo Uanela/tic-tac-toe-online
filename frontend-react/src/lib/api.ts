@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+export const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export function getToken() {
   return localStorage.getItem("token");
@@ -14,7 +14,7 @@ export function clearToken() {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${BASE}/api/${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
