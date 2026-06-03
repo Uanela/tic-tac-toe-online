@@ -18,7 +18,6 @@ export default function RankingPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-
   const totalPages = Math.ceil(total / LIMIT);
 
   useEffect(() => {
@@ -45,11 +44,7 @@ export default function RankingPage() {
         <div className={styles.thead}>
           <span>#</span>
           <span>Player</span>
-          <span>XP</span>
-          <span>W</span>
-          <span>L</span>
-          <span>D</span>
-          <span>Win%</span>
+          <span>W / L / D</span>
         </div>
 
         {loading ? (
@@ -64,6 +59,7 @@ export default function RankingPage() {
             const total_games = p.wins + p.losses + p.draws;
             const winPct =
               total_games > 0 ? Math.round((p.wins / total_games) * 100) : 0;
+
             return (
               <div
                 key={p.id}
@@ -78,12 +74,20 @@ export default function RankingPage() {
                         ? "🥉"
                         : rank}
                 </span>
-                <span className={styles.nick}>{p.nickname}</span>
-                <span className={styles.xp}>{p.xp.toLocaleString()}</span>
-                <span className={styles.wins}>{p.wins}</span>
-                <span className={styles.losses}>{p.losses}</span>
-                <span className={styles.draws}>{p.draws}</span>
-                <span className={styles.pct}>{winPct}%</span>
+
+                <div className={styles.playerCol}>
+                  <span className={styles.nick}>{p.nickname}</span>
+                  <span className={styles.xp}>{p.xp.toLocaleString()} xp</span>
+                </div>
+
+                <div className={styles.metaCol}>
+                  <div className={styles.wld}>
+                    <span className={styles.wins}>{p.wins}W</span>
+                    <span className={styles.losses}>{p.losses}L</span>
+                    <span className={styles.draws}>{p.draws}D</span>
+                  </div>
+                  <span className={styles.pct}>{winPct}% win</span>
+                </div>
               </div>
             );
           })
