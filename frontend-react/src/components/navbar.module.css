@@ -4,9 +4,9 @@
   z-index: 100;
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  height: 56px;
-  background: rgba(10, 10, 15, 0.92);
+  padding: 0 40px;
+  height: 64px;
+  background: rgba(10, 10, 15, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
@@ -14,8 +14,8 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 1.25rem;
+  gap: 6px;
+  font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -28,44 +28,61 @@
 }
 .sep {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.links {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+
+.link {
+  margin-left: 16px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.link:hover {
+  color: var(--text);
 }
 
 .right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   margin-left: auto;
 }
 
 .xp {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--accent);
 }
 
 .xpDot {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
 }
 
 .nick {
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text);
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .hamburger {
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: center;
   gap: 4px;
@@ -100,7 +117,7 @@
 
 .drawer {
   position: fixed;
-  top: 56px;
+  top: 64px;
   left: 0;
   right: 0;
   z-index: 99;
@@ -147,4 +164,50 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .nav {
+    padding: 0 16px;
+    height: 56px;
+  }
+
+  .logo {
+    font-size: 1.25rem;
+  }
+
+  .links {
+    display: none;
+  }
+
+  .right .xp {
+    font-size: 0.78rem;
+  }
+
+  .right .nick {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* hide desktop auth buttons */
+  .right a.btn,
+  .right button.btn,
+  .right button.ghost {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .drawer {
+    top: 56px;
+  }
+
+  .right :global(.btn),
+  .right :global(.ghost) {
+    display: none;
+  }
 }

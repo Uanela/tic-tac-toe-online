@@ -23,18 +23,47 @@ export function Navbar() {
           <span className={styles.o}>O</span>
         </Link>
 
-        <div className={styles.right}>
-          {user && player && (
-            <span className={styles.xp}>
-              <span className={styles.xpDot} />
-              {player.xp} XP
-            </span>
-          )}
+        {/* desktop links */}
+        <div className={styles.links}>
+          <Link to="/ranking" className={styles.link}>
+            Ranking
+          </Link>
           {user && (
-            <span className={styles.nick}>
-              {player?.nickname ?? user.email}
-            </span>
+            <Link to="/play" className={styles.link}>
+              Play
+            </Link>
           )}
+        </div>
+
+        <div className={styles.right}>
+          {user ? (
+            <>
+              {player && (
+                <span className={styles.xp}>
+                  <span className={styles.xpDot} />
+                  {player.xp} XP
+                </span>
+              )}
+              <span className={styles.nick}>
+                {player?.nickname ?? user.email}
+              </span>
+              {/* desktop only */}
+              <button className="btn ghost" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              {/* desktop only */}
+              <Link to="/auth/login" className="btn ghost">
+                Login
+              </Link>
+              <Link to="/auth/signup" className="btn">
+                Sign up
+              </Link>
+            </>
+          )}
+
           <button
             className={`${styles.hamburger} ${open ? styles.open : ""}`}
             onClick={() => setOpen((v) => !v)}
@@ -47,6 +76,7 @@ export function Navbar() {
         </div>
       </nav>
 
+      {/* mobile drawer */}
       <div className={`${styles.drawer} ${open ? styles.open : ""}`}>
         <Link
           to="/ranking"

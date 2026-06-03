@@ -66,24 +66,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
     showToast("No opponent found. Try again!");
   });
 
-  const acceptInviteEmitter = game.useEmit<{ inviteId: string }>(
-    "accept_invite",
-    { ack: true, timeout: 6000 }
-  );
+  game.on<any>("move_made", (_) => {
+    navigate("/play", { state: { game_screen: "game" } });
+  });
 
   async function handleAcceptInvite() {
     if (!pendingInvite) return;
     const inviteId = pendingInvite.inviteId;
     setPendingInvite(null);
 
-    const result = await acceptInviteEmitter.emit({ inviteId }, { ack: true });
-
-    if (!result?.success) {
-      showToast(result?.error ?? "Invite already expired");
-      return;
-    }
-
-    navigate("/play");
+    navigate("/play", { state: { inviteId } });
   }
 
   const declineInviteEmitter = game.useEmit<{ inviteId: string }>(
