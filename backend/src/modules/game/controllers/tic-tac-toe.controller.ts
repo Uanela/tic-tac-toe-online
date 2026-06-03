@@ -6,7 +6,7 @@ import ticTacToeService, {
   Player,
 } from "../services/tic-tac-toe.service";
 
-const WAITING_TIMEOUT_MS = 60_000; // 60s in queue
+const WAITING_TIMEOUT_MS = 30_000; // 60s in queue
 const INVITE_TIMEOUT_MS = 30_000; // 30s to accept
 
 class TicTacToeController extends ArkosGatewayController {
@@ -433,6 +433,9 @@ class TicTacToeController extends ArkosGatewayController {
       result,
       winnerNickname: winnerPlayer?.nickname ?? null,
     });
+
+    socket.to(roomId).socketsLeave(roomId);
+    socket.leave(roomId);
 
     ticTacToeService.deleteRoom(roomId);
   };
