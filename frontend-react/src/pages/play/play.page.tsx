@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { api } from "../../lib/api";
@@ -50,9 +50,12 @@ const XP_MAP = { win: 50, draw: 15, loss: 5 };
 export default function PlayPage() {
   const { user, player, refreshPlayer } = useAuth();
   const game = useGateway("/tic-tac-toe");
+  const location = useLocation();
 
   // ── core game state ───────────────────────────────────────────────────────
-  const [screen, setScreen] = useState<Screen>("join");
+  const [screen, setScreen] = useState<Screen>(
+    location.state?.["game_screen"] || "join"
+  );
   const [myMark, setMyMark] = useState<Mark | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [board, setBoard] = useState<Cell[]>(Array(9).fill(null));
@@ -91,6 +94,11 @@ export default function PlayPage() {
     { ack: true, timeout: 6000 }
   );
 
+  const acceptInviteEmitter = game.useEmit<{ inviteId: string }>(
+    "accept_invite",
+    { ack: true, timeout: 6000 }
+  );
+
   // ── socket connect ────────────────────────────────────────────────────────
   useEffect(() => {
     try {
@@ -100,6 +108,26 @@ export default function PlayPage() {
     }
     return () => {};
   }, [user]);
+
+  const inviteId = location.state?.["inviteId"];
+
+  useEffect(() => {
+    if (!inviteId) return;
+
+    async function accept() {
+      const result = await acceptInviteEmitter.emit(
+        { inviteId },
+        { ack: true }
+      );
+
+      if (!result?.success) {
+        setToast(result?.error ?? "Invite already expired");
+        return;
+      }
+    }
+
+    accept();
+  }, [inviteId]);
 
   const [toast, setToast] = useState<string | null>(null); // if not already there
 
