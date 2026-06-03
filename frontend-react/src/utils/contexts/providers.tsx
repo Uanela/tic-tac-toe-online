@@ -16,6 +16,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         reconnection: true,
         transports: ["websocket"],
         withCredentials: true,
+        path: "/api/socket.io",
       }),
     [user]
   );
