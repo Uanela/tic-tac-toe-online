@@ -1,9 +1,11 @@
-import { ArkosRouter, RouteHook } from "arkos";
+import { ArkosResponse, ArkosRouter, RouteHook } from "arkos";
 import playerController from "./player.controller";
 import { z } from "zod";
+import { onlineSockets } from "../game/controllers/tic-tac-toe.controller";
+import { Player } from "@prisma/client";
 
 export const hook: RouteHook = {
-  // findMany: { disabled: true },
+  // findMany: { authentication: false },
   // findOne: { disabled: true },
   // createOne: { disabled: true },
   updateOne: { authentication: true },
@@ -26,7 +28,27 @@ playerRouter.get(
       }),
     },
   },
-  playerController.findMany
+  playerController.findMany,
+  (_, res: ArkosResponse<any, { data: { data: Player[] } }>) => {
+    res.locals.data.data = res.locals.data.data.map((player) => ({
+      ...player,
+      isOnline: onlineSockets.some((socket) => socket.userId === player.userId),
+    }));
+
+    res.json(res.locals.data);
+  }
+);
+
+playerRouter.get(
+  { path: "/public/online-count", authentication: true },
+  (req, res: ArkosResponse<any, { data: { data: Player[] } }>) => {
+    res.json({
+      data: {
+        count: onlineSockets.filter((socket) => socket.userId != req.user?.id)
+          .length,
+      },
+    });
+  }
 );
 
 playerRouter.get(

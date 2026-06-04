@@ -24,4 +24,6 @@ class PlayerController extends BaseController {
 
 const playerController = new PlayerController("player");
 
+(playerController as any).interceptors = { afterFindMany: [] };
+
 export default playerController;

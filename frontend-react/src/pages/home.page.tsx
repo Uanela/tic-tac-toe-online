@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../utils/contexts/auth.context";
 import { api } from "../lib/api";
 import styles from "./home-page.module.css";
+import OnlinePlayersCount from "./play/components/online-players-count";
 
 interface PlayerRow {
   id: string;
@@ -28,8 +29,9 @@ export default function HomePage() {
     <div className={styles.page}>
       <section className={styles.hero}>
         <div className={styles.badge}>Multiplayer · Real-time</div>
+        <OnlinePlayersCount />
         <h1 className={styles.title}>
-          <span className={styles.xWord}>X</span> versus{" "}
+          <span className={styles.xWord}>X</span> vs{" "}
           <span className={styles.oWord}>O</span>
         </h1>
         <p className={styles.sub}>

@@ -27,6 +27,8 @@ tictactoeGateway.on(
   { event: "make_move", ack: true },
   ticTacToeController.makeMove
 );
+
+tictactoeGateway.hook("connection", ticTacToeController.onConnect);
 tictactoeGateway.hook("disconnect", ticTacToeController.onDisconnect);
 
 export default tictactoeGateway;

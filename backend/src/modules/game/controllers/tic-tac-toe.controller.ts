@@ -9,6 +9,8 @@ import ticTacToeService, {
 const WAITING_TIMEOUT_MS = 30_000; // 60s in queue
 const INVITE_TIMEOUT_MS = 30_000; // 30s to accept
 
+export let onlineSockets: { userId: string; socketId: string }[] = [];
+
 class TicTacToeController extends ArkosGatewayController {
   // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -440,10 +442,19 @@ class TicTacToeController extends ArkosGatewayController {
     ticTacToeService.deleteRoom(roomId);
   };
 
+  async onConnect(socket: ArkosSocket) {
+    onlineSockets.push({
+      userId: socket.currentUser?.id!,
+      socketId: socket.id,
+    });
+  }
+
   // ─── onDisconnect ─────────────────────────────────────────────────────────
 
   async onDisconnect(socket: ArkosSocket) {
-    const userId = socket.currentUser?.id;
+    onlineSockets = onlineSockets.filter(
+      (s) => s.userId !== socket.currentUser?.id
+    );
 
     // Cancel waiting queue slot
     const waiting = ticTacToeService.getWaiting();

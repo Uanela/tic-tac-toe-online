@@ -8,6 +8,7 @@ import { Scoreboard } from "./components/scoreboard";
 import { GameOverOverlay } from "./components/game-over-overlay";
 import styles from "./play-page.module.css";
 import { Toast } from "../../components/toast";
+import OnlinePlayersCount from "./components/online-players-count";
 
 type Mark = "X" | "O";
 type Cell = Mark | null;
@@ -43,6 +44,7 @@ interface PlayerResult {
   userId: string;
   nickname: string;
   xp: number;
+  isOnline: boolean;
 }
 
 const XP_MAP = { win: 50, draw: 15, loss: 5 };
@@ -336,8 +338,10 @@ export default function PlayPage() {
         <span
           className={`${styles.dot} ${game.status === "connected" ? styles.connected : ""}`}
         />
-        <span className={styles.statusText}>{game.status}</span>
+        <span className={styles.statusText}>{game.status}</span>{" "}
       </div>
+
+      <OnlinePlayersCount />
 
       {screen === "join" && (
         <div className={styles.screen}>
@@ -410,10 +414,29 @@ export default function PlayPage() {
                       {searchResults.map((p) => (
                         <div key={p.userId} className={styles.searchRow}>
                           <div className={styles.searchInfo}>
-                            <span className={styles.searchNick}>
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                              className={styles.searchNick}
+                            >
+                              <p
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                }}
+                                className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
+                              ></p>
                               {p.nickname}
                             </span>
-                            <span className={styles.searchXp}>{p.xp} XP</span>
+                            <span
+                              style={{ marginLeft: 10 }}
+                              className={styles.searchXp}
+                            >
+                              {p.xp} XP
+                            </span>
                           </div>
                           <button
                             className="btn"
