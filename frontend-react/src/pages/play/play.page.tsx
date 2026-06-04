@@ -341,7 +341,7 @@ export default function PlayPage() {
         <span className={styles.statusText}>{game.status}</span>{" "}
       </div>
 
-      <OnlinePlayersCount />
+      {screen !== "game" && <OnlinePlayersCount />}
 
       {screen === "join" && (
         <div className={styles.screen}>
