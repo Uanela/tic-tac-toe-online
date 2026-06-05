@@ -4,9 +4,9 @@ const SignupSchema = z.object({
   email: z.string().email().toLowerCase().trim().min(1, "email is required"),
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters long")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter"),
+    .min(8, "A palavra-passe deve ter no minímo 8 caractéres")
+    .regex(/[a-z]/, "A palavra-passe deve conter ao menos uma letra minúscula")
+    .regex(/[A-Z]/, "A palavra-passe deve conter ao menos uma letra maiúscula"),
   player: z.object({
     nickname: z
       .string()
