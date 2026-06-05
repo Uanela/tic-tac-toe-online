@@ -107,7 +107,7 @@ class TicTacToeService {
     return Array(9).fill(null);
   }
 
-  checkWinner(board: Board): Mark | null {
+  checkWinner(board: Board): Mark | "draw" | null {
     for (const [a, b, c] of WIN_LINES) {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
         return board[a] as Mark;
