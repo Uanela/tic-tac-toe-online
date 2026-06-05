@@ -423,7 +423,11 @@ class TicTacToeController extends ArkosGatewayController {
     const player = room.players.find((p) => p.socketId === socket.id);
     if (!player) throw new NotFoundError("Your are not in this room");
 
-    ticTacToeService.makeMove(roomId, index, player);
+    try {
+      ticTacToeService.makeMove(roomId, index, player);
+    } catch (err: any) {
+      return ack?.({ sucess: false, error: err.message });
+    }
 
     this.emitGameState(socket, roomId);
 
