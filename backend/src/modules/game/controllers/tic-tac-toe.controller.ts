@@ -77,14 +77,14 @@ class TicTacToeController extends ArkosGatewayController {
       try {
         currentState = ticTacToeService.getRoomGameState(roomId);
       } catch {
-        this.cleanupBySocket(socket, playerX.socketId);
-        this.cleanupBySocket(socket, playerO.socketId);
+        // this.cleanupBySocket(socket, playerX.socketId);
+        // this.cleanupBySocket(socket, playerO.socketId);
         return clearInterval(interval);
       }
 
       if (!currentState) {
-        this.cleanupBySocket(socket, playerX.socketId);
-        this.cleanupBySocket(socket, playerO.socketId);
+        // this.cleanupBySocket(socket, playerX.socketId);
+        // this.cleanupBySocket(socket, playerO.socketId);
         return clearInterval(interval);
       }
       const diff = new Date().getTime() - currentState?.lastUpdate.getTime();
@@ -537,13 +537,13 @@ class TicTacToeController extends ArkosGatewayController {
     ticTacToeService.deleteRoom(room.roomId);
   }
 
-  async onDisconnect(socket: ArkosSocket) {
+  onDisconnect = async (socket: ArkosSocket) => {
     // await timers.setTimeout(10000);
 
-    this.cleanupBySocket(socket, socket.id);
+    await this.cleanupBySocket(socket, socket.id);
 
     // Handle active game disconnect
-  }
+  };
 }
 
 const ticTacToeController = new TicTacToeController();
