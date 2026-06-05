@@ -445,7 +445,7 @@ class TicTacToeController extends ArkosGatewayController {
           : "PlayerTwoWin";
 
     ticTacToeService.updateRoom(room.roomId, {
-      result: result === "draw" ? null : result,
+      result,
       status: "finished",
     });
 

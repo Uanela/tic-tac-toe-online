@@ -38,7 +38,7 @@ interface GameServerState {
   status: "playing" | "finished" | "starting";
   lastUpdate: Date;
   lastMove: { index: number; mark: Mark } | null;
-  result: Mark | null;
+  result: Mark | null | "draw";
   counter: number;
 }
 
@@ -222,7 +222,10 @@ export default function PlayPage() {
 
         await refreshPlayer();
 
-        if (data.status === "finished" && !data.result) {
+        if (
+          (data.status === "finished" && !data.result) ||
+          data.result === "draw"
+        ) {
           setOverlay({
             emoji: "🤝",
             title: "Draw!",

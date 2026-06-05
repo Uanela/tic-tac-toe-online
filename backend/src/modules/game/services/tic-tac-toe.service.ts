@@ -28,7 +28,7 @@ export interface GameState {
   status: "playing" | "finished" | "starting";
   lastUpdate: Date;
   lastMove: { index: number; mark: Mark } | null;
-  result: Mark | null;
+  result: Mark | "draw" | null;
 }
 
 export interface GameRoom {
@@ -39,7 +39,7 @@ export interface GameRoom {
   board: Board;
   currentTurn: Mark;
   status: "playing" | "finished" | "starting";
-  result: Mark | null;
+  result: Mark | "draw" | null;
   lastMove: { index: number; mark: Mark } | null;
   lastUpdate: Date;
 }
@@ -210,7 +210,7 @@ class TicTacToeService {
       status: room.status,
       lastUpdate: room.lastUpdate || new Date(),
       lastMove: room.lastMove || null,
-      result: room.result || null,
+      result: room.result,
     };
   }
 
