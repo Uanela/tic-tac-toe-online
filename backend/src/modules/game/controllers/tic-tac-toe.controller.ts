@@ -489,7 +489,7 @@ class TicTacToeController extends ArkosGatewayController {
   // ─── onDisconnect ─────────────────────────────────────────────────────────
 
   async onDisconnect(socket: ArkosSocket) {
-    await timers.setTimeout(10000);
+    // await timers.setTimeout(10000);
 
     onlineSockets = onlineSockets.filter(
       (s) => s.userId !== socket.currentUser?.id

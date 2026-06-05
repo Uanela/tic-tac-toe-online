@@ -216,9 +216,15 @@ export default function PlayPage() {
       if (!data.result) {
         setScreen("game");
       } else {
-        setTimeout(() => {
-          if (gameState && gameState?.status === "finished") setGameState(null);
-        }, 15000);
+        {
+          /* setTimeout(() => { */
+        }
+        {
+          /*   if (gameState && gameState?.status === "finished") setGameState(null); */
+        }
+        {
+          /* }, 15000); */
+        }
 
         await refreshPlayer();
 
