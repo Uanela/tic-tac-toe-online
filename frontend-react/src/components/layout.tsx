@@ -1,7 +1,7 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { useGateway } from "@arkosjs/react-websockets";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Navbar } from "./navbar";
 import { InviteModal } from "./invite-modal";
 import { Toast } from "./toast";
@@ -26,6 +26,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const game = useGateway("/tic-tac-toe");
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [pendingInvite, setPendingInvite] = useState<InviteReceivedData | null>(
     null
@@ -67,15 +68,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   });
 
   game.on<any>("move_made", (_) => {
-    navigate("/play", { state: { game_screen: "game" } });
+    navigate("/play?gameScreen=game");
   });
 
   async function handleAcceptInvite() {
     if (!pendingInvite) return;
     const inviteId = pendingInvite.inviteId;
     setPendingInvite(null);
-
-    navigate("/play", { state: { inviteId } });
+    navigate(`/play?inviteId=${inviteId}`);
   }
 
   const declineInviteEmitter = game.useEmit<{ inviteId: string }>(

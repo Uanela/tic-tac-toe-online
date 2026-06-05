@@ -1,3 +1,8 @@
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from "arkos/error-handler";
 import playerService from "../../../modules/player/player.service";
 import gameService from "../game.service";
 
@@ -5,21 +10,38 @@ export type Mark = "X" | "O";
 export type Cell = Mark | null;
 export type Board = Cell[];
 
-export interface Player {
+export interface SocketPlayer {
   socketId: string;
   userId: string;
   playerId: string;
   nickname: string;
   mark: Mark;
+  xp: number;
+}
+
+export interface GameState {
+  roomId: string;
+  id: string;
+  board: Board;
+  currentTurn: Mark;
+  players: Pick<SocketPlayer, "nickname" | "userId" | "mark">[];
+  status: "playing" | "finished" | "starting";
+  lastUpdate: Date;
+  lastMove: { index: number; mark: Mark } | null;
+  result: Mark | null;
 }
 
 export interface GameRoom {
+  id: string;
   roomId: string;
   gameId: string;
-  players: [Player, Player];
+  players: [SocketPlayer, SocketPlayer];
   board: Board;
   currentTurn: Mark;
-  status: "playing" | "finished";
+  status: "playing" | "finished" | "starting";
+  result: Mark | null;
+  lastMove: { index: number; mark: Mark } | null;
+  lastUpdate: Date;
 }
 
 export interface Invite {
@@ -85,13 +107,13 @@ class TicTacToeService {
     return Array(9).fill(null);
   }
 
-  checkWinner(board: Board): Mark | "draw" | null {
+  checkWinner(board: Board): Mark | null {
     for (const [a, b, c] of WIN_LINES) {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
         return board[a] as Mark;
       }
     }
-    if (board.every((cell) => cell !== null)) return "draw";
+    if (board.every((cell) => cell !== null)) return null;
     return null;
   }
 
@@ -118,6 +140,14 @@ class TicTacToeService {
     this.rooms.set(roomId, room);
   }
 
+  updateRoom(roomId: string, room?: Partial<GameRoom>) {
+    this.rooms.set(roomId, {
+      ...this.getRoom(roomId)!,
+      ...room,
+      lastUpdate: new Date(),
+    });
+  }
+
   deleteRoom(roomId: string) {
     this.rooms.delete(roomId);
   }
@@ -128,7 +158,7 @@ class TicTacToeService {
     }
   }
 
-  opponent(room: GameRoom, socketId: string): Player {
+  opponent(room: GameRoom, socketId: string): SocketPlayer {
     return room.players.find((p) => p.socketId !== socketId)!;
   }
 
@@ -159,6 +189,54 @@ class TicTacToeService {
         playerService.recordResult(loserPlayerId, "loss"),
       ]);
     }
+  }
+
+  getRoomGameState(roomId: string): GameState {
+    const room = this.getRoom(roomId);
+    if (!room) throw new NotFoundError();
+
+    return {
+      roomId,
+      id: roomId,
+      board: room.board,
+      currentTurn: room.currentTurn,
+      players: room.players.map(({ nickname, xp, userId, mark, playerId }) => ({
+        nickname,
+        userId,
+        mark,
+        xp,
+        id: playerId,
+      })),
+      status: room.status,
+      lastUpdate: room.lastUpdate || new Date(),
+      lastMove: room.lastMove || null,
+      result: room.result || null,
+    };
+  }
+
+  makeMove(roomId: string, index: number | null, player: SocketPlayer) {
+    const room = ticTacToeService.getRoom(roomId);
+
+    if (!room) throw new NotFoundError("Room not found");
+    if (room.status === "finished")
+      throw new BadRequestError("Game is already over.");
+
+    if (player.mark !== room.currentTurn)
+      throw new ForbiddenError("It's not your turn");
+
+    if (typeof index !== "number" || index < 0 || index > 8)
+      throw new BadRequestError("Invalid cell index.");
+    if (room.board[index] !== null)
+      throw new BadRequestError("Invalid cell index.");
+
+    room.board[index] = player.mark;
+    room.currentTurn = player.mark === "X" ? "O" : "X";
+
+    ticTacToeService.updateRoom(room.roomId, {
+      ...room,
+      lastMove: { index, mark: player.mark },
+    });
+    return this.getRoomGameState(roomId);
   }
 }
 

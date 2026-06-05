@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { api } from "../../lib/api";
@@ -9,37 +9,49 @@ import { GameOverOverlay } from "./components/game-over-overlay";
 import styles from "./play-page.module.css";
 import { Toast } from "../../components/toast";
 import OnlinePlayersCount from "./components/online-players-count";
+import useInterval from "../../hooks/use-interval";
 
 type Mark = "X" | "O";
 type Cell = Mark | null;
 type Screen = "join" | "waiting" | "game";
 
-interface GameStartData {
+export interface GameState {
   roomId: string;
   board: Cell[];
-  yourMark: Mark;
-  opponentNickname: string;
   currentTurn: Mark;
+  players: PlayerOnGame[];
+  me: PlayerOnGame;
+  opponent: PlayerOnGame;
+  playerX: PlayerOnGame;
+  playerO: PlayerOnGame;
+  winner: PlayerOnGame | null;
+  loser: PlayerOnGame | null;
+  status: "playing" | "finished" | "starting";
 }
 
-interface MoveMadeData {
+interface GameServerState {
+  roomId: string;
+  id: string;
   board: Cell[];
-  index: number;
-  mark: Mark;
   currentTurn: Mark;
+  players: PlayerOnGame[];
+  status: "playing" | "finished" | "starting";
+  lastUpdate: Date;
+  lastMove: { index: number; mark: Mark } | null;
+  result: Mark | null;
+  counter: number;
 }
 
-interface GameOverData {
-  board: Cell[];
-  result: Mark | "draw";
-  winnerNickname: string | null;
+interface PlayerOnGame extends Player {
+  mark: "X" | "O";
+  myTurn: boolean;
 }
 
 interface OpponentLeftData {
   message: string;
 }
 
-interface PlayerResult {
+interface Player {
   id: string;
   userId: string;
   nickname: string;
@@ -52,19 +64,23 @@ const XP_MAP = { win: 50, draw: 15, loss: 5 };
 export default function PlayPage() {
   const { user, player, refreshPlayer } = useAuth();
   const game = useGateway("/tic-tac-toe");
-  const location = useLocation();
+
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // ── core game state ───────────────────────────────────────────────────────
   const [screen, setScreen] = useState<Screen>(
-    location.state?.["game_screen"] || "join"
+    (searchParams.get("gameScreen") as Screen) || "join"
   );
-  const [myMark, setMyMark] = useState<Mark | null>(null);
-  const [roomId, setRoomId] = useState<string | null>(null);
-  const [board, setBoard] = useState<Cell[]>(Array(9).fill(null));
-  const [currentTurn, setCurrentTurn] = useState<Mark>("X");
-  const [gameActive, setGameActive] = useState(false);
-  const [nameX, setNameX] = useState("—");
-  const [nameO, setNameO] = useState("—");
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [counter, setCounter] = useState(0);
+
+  useInterval(
+    () => {
+      setCounter((prev) => (prev - 1 <= 0 ? 0 : prev - 1));
+    },
+    gameState ? 1000 : 0
+  );
+
   const [poppedCell, setPoppedCell] = useState<number | null>(null);
   const [overlay, setOverlay] = useState<{
     emoji: string;
@@ -78,9 +94,12 @@ export default function PlayPage() {
   const [sentInviteId, setSentInviteId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<PlayerResult[]>([]);
+  const [searchResults, setSearchResults] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
   const [invitingId, setInvitingId] = useState<string | null>(null); // userId being invited
+  {
+    /* const [timer, setTimer] = useState(5); */
+  }
 
   // ── emitters ──────────────────────────────────────────────────────────────
   const joinEmitter = game.useEmit<{}>("join_game", {
@@ -111,25 +130,29 @@ export default function PlayPage() {
     return () => {};
   }, [user]);
 
-  const inviteId = location.state?.["inviteId"];
-
   useEffect(() => {
+    const inviteId = searchParams.get("inviteId");
+
     if (!inviteId) return;
 
     async function accept() {
+      if (!inviteId) return;
+
       const result = await acceptInviteEmitter.emit(
         { inviteId },
         { ack: true }
       );
+      setOverlay(null);
 
-      if (!result?.success) {
+      if (!result?.success && inviteId) {
         setToast(result?.error ?? "Invite already expired");
         return;
       }
+      setSearchParams({ inviteId: "" });
     }
 
     accept();
-  }, [inviteId]);
+  }, [searchParams]);
 
   const [toast, setToast] = useState<string | null>(null); // if not already there
 
@@ -144,8 +167,8 @@ export default function PlayPage() {
     const timeout = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await api.get<{ data: PlayerResult[] }>(
-          `/players/public?nickname__icontains=${encodeURIComponent(q)}&limit=6`
+        const res = await api.get<{ data: Player[] }>(
+          `/players/public?nickname__icontains=${encodeURIComponent(q.trim())}&limit=6`
         );
         // exclude yourself
         setSearchResults((res.data ?? []).filter((p) => p.userId !== user?.id));
@@ -159,70 +182,79 @@ export default function PlayPage() {
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
+  function getGameState(data: GameServerState): GameState {
+    const me = data.players.find((p) => p.id === player?.id)!;
+    const opponent = data.players.find((p) => p.id !== player?.id)!;
+    const playerX = data.players[0];
+    const playerO = data.players[1];
+
+    return {
+      ...data,
+      me: { ...me, myTurn: data.currentTurn === me.mark },
+      opponent: { ...opponent, myTurn: data.currentTurn === opponent.mark },
+      playerX: data.players[0],
+      playerO: data.players[1],
+      winner:
+        data.status === "finished" && data.result === "X" ? playerX : null,
+      loser: data.status === "finished" && data.result === "O" ? playerO : null,
+    };
+  }
+
   // ── game handlers ─────────────────────────────────────────────────────────
-  const handleGameStart = useCallback(
-    (data: GameStartData) => {
+  const handleGameServerState = useCallback(
+    async (data: GameServerState) => {
       if (!data) return;
-      setMyMark(data.yourMark);
-      setRoomId(data.roomId);
-      setBoard([...data.board]);
-      setCurrentTurn(data.currentTurn);
-      setGameActive(true);
-      if (data.yourMark === "X") {
-        setNameX(player?.nickname ?? "You");
-        setNameO(data.opponentNickname);
-      } else {
-        setNameX(data.opponentNickname);
-        setNameO(player?.nickname ?? "You");
+      const state = getGameState(data);
+      setGameState(state);
+      setCounter(10);
+
+      if (data.lastMove) {
+        setPoppedCell(data.lastMove?.index);
+        setTimeout(() => setPoppedCell(null), 220);
       }
-      setScreen("game");
+
+      if (!data.result) {
+        setScreen("game");
+      } else {
+        setTimeout(() => {
+          if (gameState && gameState?.status === "finished") setGameState(null);
+        }, 15000);
+
+        await refreshPlayer();
+
+        if (data.status === "finished" && !data.result) {
+          setOverlay({
+            emoji: "🤝",
+            title: "Draw!",
+            sub: "Well played by both.",
+            xpGained: XP_MAP.draw,
+          });
+        } else if (data.result === state.me.mark) {
+          setOverlay({
+            emoji: "🏆",
+            title: "You win!",
+            sub: `You beat ${state.loser?.nickname}!`,
+            titleColor: "var(--x-color)",
+            xpGained: XP_MAP.win,
+          });
+        } else {
+          setOverlay({
+            emoji: "😤",
+            title: "You lose",
+            sub: `${state.winner?.nickname} wins this round`,
+            titleColor: "var(--error)",
+            xpGained: XP_MAP.loss,
+          });
+        }
+      }
     },
     [player]
   );
 
-  game.on<GameStartData>("game_start", handleGameStart);
-
-  game.on<MoveMadeData>("move_made", (data) => {
-    setBoard([...data.board]);
-    setCurrentTurn(data.currentTurn);
-    setPoppedCell(data.index);
-    setTimeout(() => setPoppedCell(null), 220);
-    setGameActive(true);
-  });
-
-  game.on<GameOverData>("game_over", async (data) => {
-    setBoard([...data.board]);
-    setGameActive(false);
-    await refreshPlayer();
-
-    if (data.result === "draw") {
-      setOverlay({
-        emoji: "🤝",
-        title: "Draw!",
-        sub: "Well played by both.",
-        xpGained: XP_MAP.draw,
-      });
-    } else if (data.result === myMark) {
-      setOverlay({
-        emoji: "🏆",
-        title: "You win!",
-        sub: `You beat ${data.winnerNickname}!`,
-        titleColor: "var(--x-color)",
-        xpGained: XP_MAP.win,
-      });
-    } else {
-      setOverlay({
-        emoji: "😤",
-        title: "You lose",
-        sub: `${data.winnerNickname} wins this round`,
-        titleColor: "var(--error)",
-        xpGained: XP_MAP.loss,
-      });
-    }
-  });
+  game.on<GameServerState>("game_state", handleGameServerState);
 
   game.on<OpponentLeftData>("opponent_left", async (data) => {
-    setGameActive(false);
+    setGameState(null);
     await refreshPlayer();
     setOverlay({
       emoji: "🚪",
@@ -240,7 +272,7 @@ export default function PlayPage() {
       setScreen("waiting");
       return;
     }
-    handleGameStart(result.data as GameStartData);
+    handleGameServerState(result.data as GameServerState);
   }
 
   async function handleSendInvite(targetUserId: string) {
@@ -253,6 +285,7 @@ export default function PlayPage() {
 
     if (!result?.success)
       return setToast(result.error || "Couldn't send invite");
+
     setSentInviteId(result.data.inviteId);
     setSearchQuery("");
     setSearchResults([]);
@@ -265,36 +298,25 @@ export default function PlayPage() {
 
   async function handleCellClick(index: number) {
     if (
-      !gameActive ||
-      currentTurn !== myMark ||
-      board[index] !== null ||
-      !roomId
+      !gameState ||
+      gameState?.currentTurn !== gameState?.me.mark ||
+      gameState?.board[index] !== null ||
+      !gameState?.roomId
     )
       return;
 
-    const prev = [...board];
-    setBoard((b) => {
-      const next = [...b];
-      next[index] = myMark!;
-      return next;
-    });
-
-    const result = await moveEmitter.emit({ roomId, index }, { ack: true });
-    if (!result?.success) setBoard(prev);
-    setCurrentTurn(currentTurn === "X" ? "O" : "X");
+    await moveEmitter.emit({ roomId: gameState.roomId, index }, { ack: true });
+    /* if (!result?.success) ; */
   }
 
-  function handlePlayAgain() {
+  function handlePlayAgain(type?: "invite") {
     setOverlay(null);
-    setMyMark(null);
-    setRoomId(null);
-    setBoard(Array(9).fill(null));
-    setCurrentTurn("X");
-    setGameActive(false);
-    setNameX("—");
-    setNameO("—");
     setSentInviteId(null);
     setScreen("join");
+    if (type === "invite") handleSendInvite(gameState?.opponent.userId!);
+    setTimeout(() => {
+      setGameState(null);
+    }, 250);
   }
 
   function handleCancelWait() {
@@ -481,22 +503,18 @@ export default function PlayPage() {
         </div>
       )}
 
-      {screen === "game" && (
+      {screen === "game" && gameState && (
         <div className={styles.screen}>
-          <Scoreboard
-            nameX={nameX}
-            nameO={nameO}
-            currentTurn={currentTurn}
-            myMark={myMark}
-          />
+          <Scoreboard data={gameState} />
           <div
-            className={`${styles.turnBanner} ${currentTurn === myMark ? styles.myTurn : styles.theirTurn}`}
+            className={`${styles.turnBanner} ${gameState?.me.myTurn ? styles.myTurn : styles.theirTurn}`}
           >
-            {currentTurn === myMark ? "▶ Your turn" : "Opponent thinking…"}
+            {gameState?.me.myTurn ? "▶ Your turn" : "Opponent thinking…"}{" "}
+            {counter} sec
           </div>
           <Board
-            board={board}
-            isMyTurn={gameActive && currentTurn === myMark}
+            board={gameState?.board || []}
+            isMyTurn={!!gameState?.me.myTurn}
             onCellClick={handleCellClick}
             poppedCell={poppedCell}
           />
