@@ -6,7 +6,7 @@ interface GameOverOverlayProps {
   sub: string;
   titleColor?: string;
   xpGained?: number;
-  onPlayAgain: () => void;
+  onPlayAgain: (type?: "invite") => void;
 }
 
 export function GameOverOverlay({
@@ -31,8 +31,11 @@ export function GameOverOverlay({
         {xpGained !== undefined && (
           <div className={styles.xp}>+{xpGained} XP</div>
         )}
-        <button className="btn" onClick={onPlayAgain}>
-          Play again
+        <button className="btn" onClick={() => onPlayAgain("invite")}>
+          Play Again
+        </button>
+        <button className="btn" onClick={() => onPlayAgain()}>
+          Continue
         </button>
       </div>
     </div>
