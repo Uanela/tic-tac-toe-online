@@ -26,16 +26,20 @@ class TicTacToeController extends ArkosGatewayController {
   }
 
   private emitGameState(socket: ArkosSocket, roomId: string) {
-    const gameState = {
-      ...(ticTacToeService.getRoomGameState(roomId) || {}),
-      counter: 10,
-    };
+    try {
+      const gameState = {
+        ...(ticTacToeService.getRoomGameState(roomId) || {}),
+        counter: 10,
+      };
 
-    socket.user(gameState.players[0].userId).emit("game_state", gameState);
+      socket.user(gameState.players[0].userId).emit("game_state", gameState);
 
-    socket.user(gameState.players[1].userId).emit("game_state", gameState);
+      socket.user(gameState.players[1].userId).emit("game_state", gameState);
 
-    return gameState;
+      return gameState;
+    } catch {
+      return null;
+    }
   }
 
   private async startGame(
@@ -44,7 +48,7 @@ class TicTacToeController extends ArkosGatewayController {
     playerO: SocketPlayer,
     gameId: string,
     roomId: string
-  ): Promise<GameState> {
+  ): Promise<GameState | null> {
     const lastUpdate = new Date();
 
     const room: GameRoom = {
@@ -164,6 +168,7 @@ class TicTacToeController extends ArkosGatewayController {
         game.id,
         roomId
       );
+      if (!gameState) return;
 
       // Both sockets join the Socket.IO room
       socket.join(roomId);
