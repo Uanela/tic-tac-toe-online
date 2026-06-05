@@ -8,7 +8,6 @@ import ticTacToeService, {
 } from "../services/tic-tac-toe.service";
 import playerService from "../../player/player.service";
 import { NotFoundError } from "arkos/error-handler";
-import timers from "node:timers/promises";
 
 const WAITING_TIMEOUT_MS = 30_000; // 60s in queue
 const INVITE_TIMEOUT_MS = 30_000; // 30s to accept
@@ -78,21 +77,27 @@ class TicTacToeController extends ArkosGatewayController {
       try {
         currentState = ticTacToeService.getRoomGameState(roomId);
       } catch {
+        this.cleanupBySocket(socket, playerX.socketId);
+        this.cleanupBySocket(socket, playerO.socketId);
         return clearInterval(interval);
       }
 
       if (!currentState) {
+        this.cleanupBySocket(socket, playerX.socketId);
+        this.cleanupBySocket(socket, playerO.socketId);
         return clearInterval(interval);
       }
-      if (currentState.status === "finished") {
+      const diff = new Date().getTime() - currentState?.lastUpdate.getTime();
+      if (currentState.status === "finished" || diff >= 30_000) {
         clearInterval(interval);
+        if (diff >= 30_000) {
+          this.cleanupBySocket(socket, playerX.socketId);
+          this.cleanupBySocket(socket, playerO.socketId);
+        }
         return;
       }
 
-      if (
-        new Date().getTime() - currentState?.lastUpdate.getTime() >=
-        ROUND_TIME
-      ) {
+      if (diff >= ROUND_TIME) {
         ticTacToeService.updateRoom(roomId, {
           lastUpdate: new Date(),
           currentTurn: currentState?.currentTurn === "X" ? "O" : "X",
@@ -487,47 +492,24 @@ class TicTacToeController extends ArkosGatewayController {
   };
 
   // ─── onDisconnect ─────────────────────────────────────────────────────────
-
-  async onDisconnect(socket: ArkosSocket) {
-    // await timers.setTimeout(10000);
-
+  private async cleanupBySocket(socket: ArkosSocket, socketId: string) {
     onlineSockets = onlineSockets.filter(
       (s) => s.userId !== socket.currentUser?.id
     );
+    ticTacToeService.cancelWaitingQueueBySocketId(socketId);
+    const invite = ticTacToeService.cancelInviteByScoket(socketId);
 
-    // Cancel waiting queue slot
-    const waiting = ticTacToeService.getWaiting();
-    if (waiting?.socketId === socket.id) {
-      ticTacToeService.setWaitingTimer(null);
-      ticTacToeService.setWaiting(null);
-    }
+    if (invite)
+      socket.peer(invite.pendingInvite.otherSocketId).emit("invite_expired", {
+        inviteId: invite.pendingInvite.id,
+        message: "The other player disconnected.",
+      });
 
-    // Cancel any pending invites involving this socket
-    const invite = ticTacToeService.findInviteBySocket(socket.id);
-    if (invite) {
-      clearTimeout(invite.timer);
-      ticTacToeService.deleteInvite(invite.id);
-
-      const otherSocketId =
-        invite.fromSocketId === socket.id
-          ? invite.toSocketId
-          : invite.fromSocketId;
-
-      try {
-        socket.peer(otherSocketId).emit("invite_expired", {
-          inviteId: invite.id,
-          message: "The other player disconnected.",
-        });
-      } catch {
-        /* ignore */
-      }
-    }
-
-    // Handle active game disconnect
     const room = ticTacToeService.findRoomBySocket(socket.id);
     if (!room || room.status === "finished") return;
 
     room.status = "finished";
+    ticTacToeService.updateRoom(room.id, { status: "finished" });
 
     const opp = ticTacToeService.opponent(room, socket.id);
     const leavingPlayer = room.players.find((p) => p.socketId === socket.id)!;
@@ -553,6 +535,14 @@ class TicTacToeController extends ArkosGatewayController {
     }
 
     ticTacToeService.deleteRoom(room.roomId);
+  }
+
+  async onDisconnect(socket: ArkosSocket) {
+    // await timers.setTimeout(10000);
+
+    this.cleanupBySocket(socket, socket.id);
+
+    // Handle active game disconnect
   }
 }
 

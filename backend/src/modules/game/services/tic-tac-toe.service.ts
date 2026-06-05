@@ -5,6 +5,7 @@ import {
 } from "arkos/error-handler";
 import playerService from "../../../modules/player/player.service";
 import gameService from "../game.service";
+import { ArkosSocket } from "arkos/websockets";
 
 export type Mark = "X" | "O";
 export type Cell = Mark | null;
@@ -237,6 +238,35 @@ class TicTacToeService {
       lastMove: { index, mark: player.mark },
     });
     return this.getRoomGameState(roomId);
+  }
+
+  cancelWaitingQueueBySocketId(socketId: string) {
+    // Cancel waiting queue slot
+    const waiting = ticTacToeService.getWaiting();
+    if (waiting?.socketId === socketId) {
+      ticTacToeService.setWaitingTimer(null);
+      ticTacToeService.setWaiting(null);
+    }
+  }
+
+  cancelInviteByScoket(socketId: string) {
+    // Cancel any pending invites involving this socket
+    const invite = ticTacToeService.findInviteBySocket(socketId);
+    if (invite) {
+      clearTimeout(invite.timer);
+      ticTacToeService.deleteInvite(invite.id);
+
+      const otherSocketId =
+        invite.fromSocketId === socketId
+          ? invite.toSocketId
+          : invite.fromSocketId;
+
+      try {
+        return { pendingInvite: { id: invite.id, otherSocketId } };
+      } catch {
+        /* ignore */
+      }
+    }
   }
 }
 
