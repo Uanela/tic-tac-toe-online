@@ -8,7 +8,15 @@ const SignupSchema = z.object({
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter"),
   player: z.object({
-    nickname: z.string().toLowerCase().trim().min(3),
+    nickname: z
+      .string()
+      .toLowerCase()
+      .trim()
+      .min(3)
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        "Nickname deve apenas conter letras, números e underscores (_)"
+      ),
     apiAction: z.literal("create").default("create"),
   }),
 });
