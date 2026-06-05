@@ -74,10 +74,12 @@ class TicTacToeController extends ArkosGatewayController {
       try {
         currentState = ticTacToeService.getRoomGameState(roomId);
       } catch {
-        clearInterval(interval);
+        return clearInterval(interval);
       }
 
-      if (!currentState) return;
+      if (!currentState) {
+        return clearInterval(interval);
+      }
       if (currentState.status === "finished") {
         clearInterval(interval);
         return;

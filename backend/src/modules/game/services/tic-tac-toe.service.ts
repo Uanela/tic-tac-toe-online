@@ -113,7 +113,7 @@ class TicTacToeService {
         return board[a] as Mark;
       }
     }
-    if (board.every((cell) => cell !== null)) return null;
+    if (board.every((cell) => cell !== null)) return "draw";
     return null;
   }
 
