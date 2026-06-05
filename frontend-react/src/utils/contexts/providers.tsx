@@ -6,8 +6,8 @@ import { useAuth } from "./auth.context";
 import { BASE, getToken } from "../../lib/api";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const token = useMemo(getToken, [user]);
+  const { player } = useAuth();
+  const token = useMemo(getToken, [player]);
 
   const manager = useMemo(
     () =>
@@ -18,7 +18,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         withCredentials: true,
         path: "/api/socket.io",
       }),
-    [user]
+    [player]
   );
 
   return (
