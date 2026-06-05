@@ -8,7 +8,7 @@ export default function OnlinePlayersCount() {
   return (
     <div className={styles.statusBar}>
       <p className={styles.statusText}>
-        {onlineCount
+        {onlineCount?.count
           ? `${onlineCount.count} Online Player${onlineCount.count > 1 ? "s" : ""}`
           : ""}
       </p>
