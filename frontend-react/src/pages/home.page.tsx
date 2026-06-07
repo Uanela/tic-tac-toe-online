@@ -41,7 +41,7 @@ export default function HomePage() {
         <div className={styles.cta}>
           {user ? (
             <Link to="/play" className="btn">
-              Find a match
+              Ir Para Um Desafio
             </Link>
           ) : (
             <>

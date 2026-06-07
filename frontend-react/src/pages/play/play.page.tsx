@@ -393,7 +393,7 @@ export default function PlayPage() {
               !!sentInviteId
             }
           >
-            {joinEmitter.loading ? "Finding match…" : "Find opponent"}
+            {joinEmitter.loading ? "Finding match…" : "Procurar Adversário"}
           </button>
 
           <div className={styles.divider}>
