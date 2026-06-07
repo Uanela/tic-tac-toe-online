@@ -77,8 +77,8 @@ class TicTacToeController extends ArkosGatewayController {
       try {
         currentState = ticTacToeService.getRoomGameState(roomId);
       } catch {
-        this.cleanupBySocket(socket, playerX.socketId);
-        this.cleanupBySocket(socket, playerO.socketId);
+        // this.cleanupBySocket(socket, playerX.socketId);
+        // this.cleanupBySocket(socket, playerO.socketId);
         return clearInterval(interval);
       }
 
@@ -90,10 +90,10 @@ class TicTacToeController extends ArkosGatewayController {
       const diff = new Date().getTime() - currentState?.lastUpdate.getTime();
       if (currentState.status === "finished" || diff >= 30_000) {
         clearInterval(interval);
-        if (diff >= 30_000) {
-          this.cleanupBySocket(socket, playerX.socketId);
-          this.cleanupBySocket(socket, playerO.socketId);
-        }
+        // if (diff >= 30_000) {
+        //   this.cleanupBySocket(socket, playerX.socketId);
+        //   this.cleanupBySocket(socket, playerO.socketId);
+        // }
         return;
       }
 
