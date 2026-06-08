@@ -44,6 +44,7 @@ const arkosConfig = defineConfig({
       level: 1,
     },
   },
+  email: {},
 });
 
 export default arkosConfig;

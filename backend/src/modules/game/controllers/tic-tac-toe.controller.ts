@@ -236,12 +236,9 @@ class TicTacToeController extends ArkosGatewayController {
     //   return ack?.({ success: false, error: "You are already in a game." });
 
     // Guard: target online?
-    const targetOnline = await socket.user(data.targetUserId).isOnline();
-    if (!targetOnline) {
-      ack?.({ success: false, error: "That player is not online." });
-
-      return;
-    }
+    // const targetOnline = await socket.user(data.targetUserId).isOnline();
+    // if (!targetOnline)
+    //   ack?.({ success: false, error: "That player is not online." });
 
     const targetUser = await userService.findById(data.targetUserId);
     if (!targetUser)
@@ -268,13 +265,13 @@ class TicTacToeController extends ArkosGatewayController {
 
     // Grab one of the target's socket IDs
     const targetSockets = await socket.user(data.targetUserId).fetchSockets();
-    if (!targetSockets.length)
-      return ack?.({
-        success: false,
-        error: "Target player is not reachable.",
-      });
+    // if (!targetSockets.length)
+    //   ack?.({
+    //     success: false,
+    //     error: "Target player is not reachable.",
+    //   });
 
-    const targetSocketId = targetSockets[0].id;
+    const targetSocketId = targetSockets[0]?.id;
     const inviteId = `inv_${Date.now()}_${userId}`;
 
     const timer = setTimeout(() => {
