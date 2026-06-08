@@ -20,7 +20,7 @@ export const onLogoutError = [];
 
 export const beforeSignup = [authController.beforeSignup];
 
-export const afterSignup = [];
+export const afterSignup = [authController.afterSignup];
 
 export const onSignupError = [];
 
