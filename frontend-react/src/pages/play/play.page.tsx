@@ -11,6 +11,12 @@ import { Toast } from "../../components/toast";
 import OnlinePlayersCount from "./components/online-players-count";
 import useInterval from "../../hooks/use-interval";
 
+// feat: Instantiate notification sound objects from the public directory
+const joinSound = new Audio("/sounds/join.mp3");
+joinSound.preload = "auto";
+const inviteSound = new Audio("/sounds/invite.mp3");
+
+
 type Mark = "X" | "O";
 type Cell = Mark | null;
 type Screen = "join" | "waiting" | "game";
@@ -148,6 +154,10 @@ export default function PlayPage() {
         setToast(result?.error ?? "Invite already expired");
         return;
       }
+
+      // feat: Play notification sound when an invitation is successfully accepted
+      inviteSound.play().catch((err) => console.log("Failed to play invite sound:", err));
+
       setSearchParams({ inviteId: "" });
     }
 
@@ -214,13 +224,19 @@ export default function PlayPage() {
       }
 
       if (!data.result) {
-        setScreen("game");
+        // feat: Check if screen transitions into game phase, then play entering match notification sound
+        setScreen((prevScreen) => {
+          if (prevScreen !== "game") {
+            joinSound.play().catch((err) => console.log("Failed to play join sound:", err));
+          }
+          return "game";
+        });
       } else {
         {
           /* setTimeout(() => { */
         }
         {
-          /*   if (gameState && gameState?.status === "finished") setGameState(null); */
+          /* if (gameState && gameState?.status === "finished") setGameState(null); */
         }
         {
           /* }, 15000); */
@@ -295,245 +311,4 @@ export default function PlayPage() {
     if (!result?.success)
       return setToast(result.error || "Couldn't send invite");
 
-    setSentInviteId(result.data.inviteId);
-    setSearchQuery("");
-    setSearchResults([]);
-  }
-
-  function handleCancelInvite() {
-    // Server will auto-expire, just clear local state
-    setSentInviteId(null);
-  }
-
-  async function handleCellClick(index: number) {
-    if (
-      !gameState ||
-      gameState?.currentTurn !== gameState?.me.mark ||
-      gameState?.board[index] !== null ||
-      !gameState?.roomId
-    )
-      return;
-
-    await moveEmitter.emit({ roomId: gameState.roomId, index }, { ack: true });
-    /* if (!result?.success) ; */
-  }
-
-  function handlePlayAgain(type?: "invite") {
-    setOverlay(null);
-    setSentInviteId(null);
-    setScreen("join");
-    if (type === "invite") handleSendInvite(gameState?.opponent.userId!);
-    setTimeout(() => {
-      setGameState(null);
-    }, 250);
-  }
-
-  function handleCancelWait() {
-    game.raw.rawSocket.connect();
-    setScreen("join");
-  }
-
-  // ── guards ────────────────────────────────────────────────────────────────
-  if (!user) {
-    return (
-      <div className={styles.gate}>
-        <h2>Sign in to play</h2>
-        <p>You need an account to join ranked matches.</p>
-        <div className={styles.gateCta}>
-          <Link to="/auth/login" className="btn">
-            Log in
-          </Link>
-          <Link to="/auth/signup" className="btn ghost">
-            Sign up
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!player) {
-    return (
-      <div className={styles.gate}>
-        <h2>No player profile</h2>
-        <p>
-          Something went wrong with your player profile. Try signing up again.
-        </p>
-      </div>
-    );
-  }
-
-  // ── render ────────────────────────────────────────────────────────────────
-  return (
-    <div className={styles.page}>
-      <div className={styles.statusBar}>
-        <span
-          className={`${styles.dot} ${game.status === "connected" ? styles.connected : ""}`}
-        />
-        <span className={styles.statusText}>{game.status}</span>{" "}
-      </div>
-
-      {screen !== "game" && <OnlinePlayersCount />}
-
-      {screen === "join" && (
-        <div className={styles.screen}>
-          <div className={styles.joinInfo}>
-            <div className={styles.playerCard}>
-              <span className={styles.playerMark}>?</span>
-              <span className={styles.playerNick}>{player.nickname}</span>
-              <span className={styles.playerXp}>{player.xp} XP</span>
-            </div>
-          </div>
-
-          <button
-            className="btn"
-            onClick={handleJoin}
-            disabled={
-              game.status !== "connected" ||
-              joinEmitter.loading ||
-              !!sentInviteId
-            }
-          >
-            {joinEmitter.loading ? "Finding match…" : "Procurar Adversário"}
-          </button>
-
-          <div className={styles.divider}>
-            <span>or challenge someone</span>
-          </div>
-
-          {/* ── invite panel ── */}
-
-          {sentInviteId ? (
-            <div className={styles.invitePending}>
-              <div className={styles.waitingDots}>
-                <span />
-                <span />
-                <span />
-              </div>
-              <p className={styles.hint}>Waiting for opponent to accept…</p>
-              <button className="btn ghost" onClick={handleCancelInvite}>
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div className={styles.invitePanel}>
-              <button
-                className={`btn ghost ${styles.inviteToggle}`}
-                onClick={() => {
-                  setInviteOpen((o) => !o);
-                  setSearchQuery("");
-                  setSearchResults([]);
-                }}
-              >
-                {inviteOpen ? "✕ Close" : "⚔️ Challenge a player"}
-              </button>
-
-              {inviteOpen && (
-                <>
-                  <div className={styles.searchBox}>
-                    <input
-                      className="input"
-                      placeholder="Search by nickname…"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      autoFocus
-                    />
-                    {searching && <span className={styles.searchSpinner} />}
-                  </div>
-
-                  {searchResults.length > 0 && (
-                    <div className={styles.searchResults}>
-                      {searchResults.map((p) => (
-                        <div key={p.userId} className={styles.searchRow}>
-                          <div className={styles.searchInfo}>
-                            <span
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                              className={styles.searchNick}
-                            >
-                              <p
-                                style={{
-                                  width: 8,
-                                  height: 8,
-                                }}
-                                className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
-                              ></p>
-                              {p.nickname}
-                            </span>
-                            <span
-                              style={{ marginLeft: 10 }}
-                              className={styles.searchXp}
-                            >
-                              {p.xp} XP
-                            </span>
-                          </div>
-                          <button
-                            className="btn"
-                            onClick={() => handleSendInvite(p.userId)}
-                            disabled={
-                              invitingId === p.userId ||
-                              sendInviteEmitter.loading
-                            }
-                          >
-                            {invitingId === p.userId ? "Sending…" : "Challenge"}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {searchQuery.trim() &&
-                    !searching &&
-                    searchResults.length === 0 && (
-                      <p className={styles.hint}>No players found</p>
-                    )}
-                </>
-              )}
-            </div>
-          )}
-
-          <p className={styles.hint}>Open in two tabs to test locally.</p>
-        </div>
-      )}
-
-      {screen === "waiting" && (
-        <div className={styles.screen}>
-          <div className={styles.waitingDots}>
-            <span />
-            <span />
-            <span />
-          </div>
-          <p className={styles.hint}>Waiting for an opponent…</p>
-          <button className="btn ghost" onClick={handleCancelWait}>
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {screen === "game" && gameState && (
-        <div className={styles.screen}>
-          <Scoreboard data={gameState} />
-          <div
-            className={`${styles.turnBanner} ${gameState?.me.myTurn ? styles.myTurn : styles.theirTurn}`}
-          >
-            {gameState?.me.myTurn ? "▶ Your turn" : "Opponent thinking…"}{" "}
-            {counter} sec
-          </div>
-          <Board
-            board={gameState?.board || []}
-            isMyTurn={!!gameState?.me.myTurn}
-            onCellClick={handleCellClick}
-            poppedCell={poppedCell}
-          />
-        </div>
-      )}
-
-      {overlay && (
-        <GameOverOverlay {...overlay} onPlayAgain={handlePlayAgain} />
-      )}
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
-    </div>
-  );
-}
+    setSentInviteId
