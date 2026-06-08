@@ -21,6 +21,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
+    credentials: "include",
   });
 
   const json = await res.json();

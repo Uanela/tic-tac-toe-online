@@ -66,10 +66,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     showToast("No opponent found. Try again!");
   });
 
-  game.on<any>("move_made", (_) => {
-    navigate("/play?gameScreen=game");
-  });
-
   async function handleAcceptInvite() {
     if (!pendingInvite) return;
     const inviteId = pendingInvite.inviteId;

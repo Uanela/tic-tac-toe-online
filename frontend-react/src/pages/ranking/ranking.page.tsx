@@ -11,7 +11,7 @@ interface PlayerRow {
   draws: number;
 }
 
-const LIMIT = 20;
+const LIMIT = 10;
 
 export default function RankingPage() {
   const [players, setPlayers] = useState<PlayerRow[]>([]);

@@ -13,7 +13,7 @@ import userService from "../../user/user.service";
 import challengeEmail from "../utils/email-templates/challenge.email";
 
 const WAITING_TIMEOUT_MS = 30_000; // 60s in queue
-const INVITE_TIMEOUT_MS = 30_000; // 30s to accept
+const INVITE_TIMEOUT_MS = 120_000; // 2min to accept
 const ROUND_TIME = 10_000;
 
 export let onlineSockets: { userId: string; socketId: string }[] = [];
@@ -315,13 +315,15 @@ class TicTacToeController extends ArkosGatewayController {
       expiresAt: invite.expiresAt,
     });
 
-    emailService
-      .send({
-        to: targetUser.email,
-        subject: `🎮 ${player.nickname} te desafiou para uma partida em X e O`,
-        html: challengeEmail(player, targetPlayer, inviteId),
-      })
-      .catch(console.error);
+    const targetOnline = await socket.user(data.targetUserId).isOnline();
+    if (!targetOnline)
+      emailService
+        .send({
+          to: targetUser.email,
+          subject: `🎮 ${player.nickname} te desafiou para uma partida em X e O`,
+          html: challengeEmail(player, targetPlayer, inviteId),
+        })
+        .catch(console.error);
 
     ack?.({ success: true, data: { inviteId, expiresAt: invite.expiresAt } });
   };

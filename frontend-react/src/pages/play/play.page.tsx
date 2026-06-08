@@ -10,6 +10,7 @@ import styles from "./play-page.module.css";
 import { Toast } from "../../components/toast";
 import OnlinePlayersCount from "./components/online-players-count";
 import useInterval from "../../hooks/use-interval";
+import { useFetch } from "../../hooks/use-fetch";
 
 type Mark = "X" | "O";
 type Cell = Mark | null;
@@ -67,6 +68,10 @@ export default function PlayPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const { data: { data: players } = { data: null, count: 0 } } = useFetch(
+    "/players/public/online"
+  );
+
   // ── core game state ───────────────────────────────────────────────────────
   const [screen, setScreen] = useState<Screen>(
     (searchParams.get("gameScreen") as Screen) || "join"
@@ -97,9 +102,6 @@ export default function PlayPage() {
   const [searchResults, setSearchResults] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
   const [invitingId, setInvitingId] = useState<string | null>(null); // userId being invited
-  {
-    /* const [timer, setTimer] = useState(5); */
-  }
 
   // ── emitters ──────────────────────────────────────────────────────────────
   const joinEmitter = game.useEmit<{}>("join_game", {
@@ -207,11 +209,6 @@ export default function PlayPage() {
       const state = getGameState(data);
       setGameState(state);
       setCounter(10);
-
-      if (data.lastMove) {
-        setPoppedCell(data.lastMove?.index);
-        setTimeout(() => setPoppedCell(null), 220);
-      }
 
       if (!data.result) {
         setScreen("game");
@@ -321,7 +318,15 @@ export default function PlayPage() {
     )
       return;
 
-    await moveEmitter.emit({ roomId: gameState.roomId, index }, { ack: true });
+    const result = await moveEmitter.emit(
+      { roomId: gameState.roomId, index },
+      { ack: true }
+    );
+
+    if (result.success) {
+      setPoppedCell(index);
+      setTimeout(() => setPoppedCell(null), 220);
+    }
     /* if (!result?.success) ; */
   }
 
@@ -434,7 +439,7 @@ export default function PlayPage() {
                 {inviteOpen ? "✕ Close" : "⚔️ Challenge a player"}
               </button>
 
-              {inviteOpen && (
+              {inviteOpen ? (
                 <>
                   <div className={styles.searchBox}>
                     <input
@@ -497,6 +502,67 @@ export default function PlayPage() {
                       <p className={styles.hint}>No players found</p>
                     )}
                 </>
+              ) : (
+                <div>
+                  <div
+                    className={styles.header}
+                    style={{
+                      marginTop: 32,
+                      marginBottom: 16,
+                      marginInline: "block",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    <p>Jogadores Online</p>
+                  </div>
+
+                  <div className={styles.searchResults}>
+                    {players?.map(
+                      (p: PlayerOnGame) =>
+                        p.id !== player.id && (
+                          <div key={p.userId} className={styles.searchRow}>
+                            <div className={styles.searchInfo}>
+                              <span
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                                className={styles.searchNick}
+                              >
+                                <p
+                                  style={{
+                                    width: 8,
+                                    height: 8,
+                                  }}
+                                  className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
+                                ></p>
+                                {p.nickname}
+                              </span>
+                              <span
+                                style={{ marginLeft: 10 }}
+                                className={styles.searchXp}
+                              >
+                                {p.xp} XP
+                              </span>
+                            </div>
+                            <button
+                              className="btn"
+                              onClick={() => handleSendInvite(p.userId)}
+                              disabled={
+                                invitingId === p.userId ||
+                                sendInviteEmitter.loading
+                              }
+                            >
+                              {invitingId === p.userId
+                                ? "Sending…"
+                                : "Challenge"}
+                            </button>
+                          </div>
+                        )
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )}

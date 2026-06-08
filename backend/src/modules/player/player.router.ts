@@ -3,6 +3,8 @@ import playerController from "./player.controller";
 import { z } from "zod";
 import { onlineSockets } from "../game/controllers/tic-tac-toe.controller";
 import { Player } from "@prisma/client";
+import playerService from "./player.service";
+import { authService } from "arkos/services";
 
 export const hook: RouteHook = {
   // findMany: { authentication: false },
@@ -40,13 +42,20 @@ playerRouter.get(
 );
 
 playerRouter.get(
-  { path: "/public/online-count", authentication: false },
-  (req, res: ArkosResponse<any, { data: { data: Player[] } }>) => {
+  { path: "/public/online", authentication: false },
+  async (req, res: ArkosResponse<any, { data: { data: Player[] } }>) => {
+    const currentUser = await authService.getAuthenticatedUser(req);
+    const sockets = onlineSockets.filter(
+      (socket) => socket.userId !== currentUser?.id
+    );
+
+    const players = await playerService.findMany({
+      userId: { in: sockets.map((s) => s.userId) },
+    });
+
     res.json({
-      data: {
-        count: onlineSockets.filter((socket) => socket.userId != req.user?.id)
-          .length,
-      },
+      count: sockets.length,
+      data: players.map((p) => ({ ...p, isOnline: true })),
     });
   }
 );
