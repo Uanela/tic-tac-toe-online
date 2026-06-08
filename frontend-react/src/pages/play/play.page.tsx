@@ -15,6 +15,7 @@ import useInterval from "../../hooks/use-interval";
 const joinSound = new Audio("/sounds/join.mp3");
 joinSound.preload = "auto";
 const inviteSound = new Audio("/sounds/invite.mp3");
+joinSound.preload = "auto";
 
 
 type Mark = "X" | "O";
