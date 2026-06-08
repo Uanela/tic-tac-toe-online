@@ -68,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     setToken(res.accessToken);
     await fetchMe();
+    await new Promise((r) => setTimeout(r, 1000));
   }
 
   async function signup(data: {
