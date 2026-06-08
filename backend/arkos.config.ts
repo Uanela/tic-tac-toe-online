@@ -21,6 +21,16 @@ const arkosConfig = defineConfig({
   swagger: {
     mode: "zod",
     strict: false,
+    options: {
+      definition: {
+        servers: [
+          {
+            url: "https://games.arkosjs.com",
+            description: "Production server",
+          },
+        ],
+      },
+    },
   },
   middlewares: {
     cors: {
