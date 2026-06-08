@@ -12,9 +12,9 @@ import OnlinePlayersCount from "./components/online-players-count";
 import useInterval from "../../hooks/use-interval";
 
 // feat: Instantiate notification sound objects from the public directory
-const joinSound = new Audio("/sounds/join.mp3");
+const joinSound = new Audio("/sounds/join-sound.mp3");
 joinSound.preload = "auto";
-const inviteSound = new Audio("/sounds/invite.mp3");
+const inviteSound = new Audio("/sounds/invite_sound.mp3");
 joinSound.preload = "auto";
 
 
