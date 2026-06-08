@@ -1,6 +1,7 @@
 export default function challengeEmail(
   player: { nickname: string },
-  opponent: { nickname: string }
+  opponent: { nickname: string },
+  inviteId: string
 ): string {
   return `<p>Olá, ${opponent.nickname},</p>
 
@@ -12,7 +13,7 @@ export default function challengeEmail(
 
 <p>Para aceitar o desafio e começar a jogar agora mesmo, basta clicar no link abaixo:</p>
 
-<p>👉 <a href="https://games.arkosjs.com/play?inviteId=fadsfasdfsdfsd">Clique aqui para jogar agora</a></p>
+<p>👉 <a href="https://games.arkosjs.com/play?inviteId=${inviteId}">Clique aqui para jogar agora</a></p>
 
 <p>⏳ <b>Aviso:</b> Não deixe seu adversário esperando! Acesse o link e mostre quem manda no tabuleiro.</p>
 

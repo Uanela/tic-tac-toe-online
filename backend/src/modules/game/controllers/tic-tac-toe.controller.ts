@@ -322,7 +322,7 @@ class TicTacToeController extends ArkosGatewayController {
       .send({
         to: targetUser.email,
         subject: `🎮 ${player.nickname} te desafiou para uma partida em X e O`,
-        html: challengeEmail(player, targetPlayer),
+        html: challengeEmail(player, targetPlayer, inviteId),
       })
       .catch(console.error);
 
