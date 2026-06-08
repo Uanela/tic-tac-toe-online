@@ -40,7 +40,7 @@ playerRouter.get(
 );
 
 playerRouter.get(
-  { path: "/public/online-count", authentication: true },
+  { path: "/public/online-count", authentication: false },
   (req, res: ArkosResponse<any, { data: { data: Player[] } }>) => {
     res.json({
       data: {
