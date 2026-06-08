@@ -88,12 +88,13 @@ class TicTacToeController extends ArkosGatewayController {
         return clearInterval(interval);
       }
       const diff = new Date().getTime() - currentState?.lastUpdate.getTime();
+
       if (currentState.status === "finished" || diff >= 30_000) {
         clearInterval(interval);
-        // if (diff >= 30_000) {
-        //   this.cleanupBySocket(socket, playerX.socketId);
-        //   this.cleanupBySocket(socket, playerO.socketId);
-        // }
+        if (diff >= 30_000) {
+          this.cleanupBySocket(socket, playerX.socketId);
+          this.cleanupBySocket(socket, playerO.socketId);
+        }
         return;
       }
 
@@ -274,7 +275,7 @@ class TicTacToeController extends ArkosGatewayController {
         message: `${targetPlayer.nickname} did not respond in time.`,
       });
       // Notify target
-      socket.peer(targetSocketId).emit("invite_expired", {
+      socket.to(targetSocketId).emit("invite_expired", {
         inviteId,
         message: `Invite from ${player.nickname} expired.`,
       });
@@ -401,7 +402,7 @@ class TicTacToeController extends ArkosGatewayController {
 
     // Notify sender
     try {
-      socket.peer(invite.fromSocketId).emit("invite_declined", {
+      socket.to(invite.fromSocketId).emit("invite_declined", {
         inviteId: invite.id,
         byNickname: invite.toNickname,
         message: `${invite.toNickname} declined your invite.`,
@@ -491,7 +492,6 @@ class TicTacToeController extends ArkosGatewayController {
     if (room) this.emitGameState(socket, room);
   };
 
-  // ─── onDisconnect ─────────────────────────────────────────────────────────
   private async cleanupBySocket(socket: ArkosSocket, socketId: string) {
     onlineSockets = onlineSockets.filter(
       (s) => s.userId !== socket.currentUser?.id
@@ -500,7 +500,7 @@ class TicTacToeController extends ArkosGatewayController {
     const invite = ticTacToeService.cancelInviteByScoket(socketId);
 
     if (invite)
-      socket.peer(invite.pendingInvite.otherSocketId).emit("invite_expired", {
+      socket.to(invite.pendingInvite.otherSocketId).emit("invite_expired", {
         inviteId: invite.pendingInvite.id,
         message: "The other player disconnected.",
       });
@@ -529,7 +529,7 @@ class TicTacToeController extends ArkosGatewayController {
     );
 
     try {
-      socket.peer(opp.socketId).emit("opponent_left", {
+      socket.to(opp.socketId).emit("opponent_left", {
         message: "Your opponent disconnected. You win by default!",
       });
     } catch {

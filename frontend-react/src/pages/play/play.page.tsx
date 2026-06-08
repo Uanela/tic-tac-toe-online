@@ -276,7 +276,14 @@ export default function PlayPage() {
   // ── actions ───────────────────────────────────────────────────────────────
   async function handleJoin() {
     const result = await joinEmitter.emit({}, { ack: true });
-    if (!result?.success) return;
+    if (!result?.success) {
+      setToast(
+        result.error ||
+          (result as any).message ||
+          "Nǡo foi possivel encontrar adversário"
+      );
+      return;
+    }
     if ((result.data as any)?.waiting) {
       setScreen("waiting");
       return;
