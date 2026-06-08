@@ -26,6 +26,7 @@
     "@scalar/express-api-reference": "0.8.35",
     "arkos": "1.7.0-canary.29",
     "express": "4.22.1",
+    "node-cron": "^4.2.1",
     "socket.io": "^4.8.3",
     "zod": "3.24.2"
   }
