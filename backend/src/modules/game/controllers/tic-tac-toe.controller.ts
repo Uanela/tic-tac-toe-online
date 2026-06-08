@@ -8,6 +8,9 @@ import ticTacToeService, {
 } from "../services/tic-tac-toe.service";
 import playerService from "../../player/player.service";
 import { NotFoundError } from "arkos/error-handler";
+import { emailService } from "arkos/services";
+import userService from "../../user/user.service";
+import challengeEmail from "../utils/email-templates/challenge.email";
 
 const WAITING_TIMEOUT_MS = 30_000; // 60s in queue
 const INVITE_TIMEOUT_MS = 30_000; // 30s to accept
@@ -234,8 +237,18 @@ class TicTacToeController extends ArkosGatewayController {
 
     // Guard: target online?
     const targetOnline = await socket.user(data.targetUserId).isOnline();
-    if (!targetOnline)
-      return ack?.({ success: false, error: "That player is not online." });
+    if (!targetOnline) {
+      ack?.({ success: false, error: "That player is not online." });
+
+      return;
+    }
+
+    const targetUser = await userService.findById(data.targetUserId);
+    if (!targetUser)
+      return ack?.({
+        success: false,
+        error: "Não foi possivel encontrar o jogador",
+      });
 
     // Guard: target already in a game?
     // if (this.activeRoomId(socket, data.targetUserId))
@@ -304,6 +317,14 @@ class TicTacToeController extends ArkosGatewayController {
       fromUserId: userId,
       expiresAt: invite.expiresAt,
     });
+
+    emailService
+      .send({
+        to: targetUser.email,
+        subject: `🎮 ${player.nickname} te desafiou para uma partida em X e O`,
+        html: challengeEmail(player, targetPlayer),
+      })
+      .catch(console.error);
 
     ack?.({ success: true, data: { inviteId, expiresAt: invite.expiresAt } });
   };
