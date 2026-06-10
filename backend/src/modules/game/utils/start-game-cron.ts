@@ -7,13 +7,44 @@ import {
   morningInviteEmail,
 } from "./email-templates/invintations.email";
 import { emailService } from "arkos/services";
+import { NotificationPreferenceCategory, Prisma } from "@prisma/client";
+import notificationPreferenceService from "../../notification-preference/notification-preference.service";
+
+const queryOptions = {
+  select: {
+    email: true,
+    player: {
+      select: {
+        nickname: true,
+        settings: {
+          select: {
+            notificationPreferences: {
+              select: {
+                category: true,
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.UserFindManyArgs;
 
 function sendEmails(
-  users: { email: string; player: { nickname: string } | null }[],
-  templateFn: (player: { nickname: string }) => EmailTemplateResult
+  users: Prisma.UserGetPayload<typeof queryOptions>[],
+  templateFn: (player: { nickname: string }) => EmailTemplateResult,
+  category: NotificationPreferenceCategory
 ) {
   users.forEach((user) => {
-    if (!user.player) return;
+    if (
+      !user?.player ||
+      !notificationPreferenceService.canNotify(
+        user.player.settings?.notificationPreferences,
+        category
+      )
+    )
+      return;
 
     emailService
       .send({
@@ -26,20 +57,17 @@ function sendEmails(
 
 function scheduleByTime(time: "9" | "12" | "20") {
   return async () => {
-    const users = await userService.findMany(
-      {},
-      { select: { email: true, player: { select: { nickname: true } } } }
-    );
+    const users = await userService.findMany({}, queryOptions);
 
     switch (time) {
       case "9":
-        sendEmails(users, morningInviteEmail);
+        sendEmails(users, morningInviteEmail, "MorningDailyRemainder");
         break;
       case "12":
-        sendEmails(users, lunchInviteEmail);
+        sendEmails(users, lunchInviteEmail, "AfternoonDailyRemainder");
         break;
       case "20":
-        sendEmails(users, eveningInviteEmail);
+        sendEmails(users, eveningInviteEmail, "NightDailyRemainder");
         break;
     }
   };
