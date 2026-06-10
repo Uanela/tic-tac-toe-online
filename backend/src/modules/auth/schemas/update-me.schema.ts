@@ -1,11 +1,23 @@
+import {
+  NotificationPreferenceCategory,
+  NotificationPreferenceStatus,
+} from "@prisma/client";
 import { z } from "zod";
 
 const UpdateMeSchema = z.object({
-  password: z
-    .string()
-    .min(8, "A palavra-passe deve ter no minímo 8 caractéres")
-    .regex(/[a-z]/, "A palavra-passe deve conter ao menos uma letra minúscula")
-    .regex(/[A-Z]/, "A palavra-passe deve conter ao menos uma letra maiúscula"),
+  player: z.object({
+    id: z.string().optional(),
+    settings: z.object({
+      id: z.string(),
+      notificationPreferences: z.array(
+        z.object({
+          id: z.string().optional(),
+          category: z.nativeEnum(NotificationPreferenceCategory),
+          status: z.nativeEnum(NotificationPreferenceStatus),
+        })
+      ),
+    }),
+  }),
 });
 
 export default UpdateMeSchema;
