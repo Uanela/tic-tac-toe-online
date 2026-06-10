@@ -8,9 +8,15 @@ model User {
   isStaff              Boolean   @default(false)
   deletedSelfAccountAt DateTime?
   isActive             Boolean   @default(true)
-  role                 String    @default("User")
+  role                 UserRole  @default(User)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
   player Player?
+}
+
+enum UserRole {
+  User
+  Player
+  Admin
 }
