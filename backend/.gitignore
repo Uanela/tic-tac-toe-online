@@ -69,7 +69,7 @@ $RECYCLE.BIN/
 # Temporary files
 *.tmp
 *.temp
-.cache/
+.cache
 .eslintcache
 .stylelintcache
 
