@@ -11,6 +11,7 @@ import { NotFoundError } from "arkos/error-handler";
 import { emailService } from "arkos/services";
 import userService from "../../user/user.service";
 import challengeEmail from "../utils/email-templates/challenge.email";
+import notificationPreferenceService from "../../notification-preference/notification-preference.service";
 
 const WAITING_TIMEOUT_MS = 30_000; // 60s in queue
 const INVITE_TIMEOUT_MS = 120_000; // 2min to accept
@@ -316,7 +317,13 @@ class TicTacToeController extends ArkosGatewayController {
     });
 
     const targetOnline = await socket.user(data.targetUserId).isOnline();
-    if (!targetOnline)
+    if (
+      !targetOnline &&
+      (await notificationPreferenceService.canNotify(
+        data.targetUserId,
+        "Challenge"
+      ))
+    )
       emailService
         .send({
           to: targetUser.email,

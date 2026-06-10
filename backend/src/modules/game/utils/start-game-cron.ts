@@ -10,7 +10,7 @@ import { emailService } from "arkos/services";
 import { NotificationPreferenceCategory, Prisma } from "@prisma/client";
 import notificationPreferenceService from "../../notification-preference/notification-preference.service";
 
-const queryOptions = {
+export const queryOptionsForNotifications = {
   select: {
     email: true,
     player: {
@@ -32,7 +32,7 @@ const queryOptions = {
 } satisfies Prisma.UserFindManyArgs;
 
 function sendEmails(
-  users: Prisma.UserGetPayload<typeof queryOptions>[],
+  users: Prisma.UserGetPayload<typeof queryOptionsForNotifications>[],
   templateFn: (player: { nickname: string }) => EmailTemplateResult,
   category: NotificationPreferenceCategory
 ) {
@@ -40,7 +40,7 @@ function sendEmails(
     if (
       !user?.player ||
       !notificationPreferenceService.canNotify(
-        user.player.settings?.notificationPreferences,
+        user.player.settings?.notificationPreferences || [],
         category
       )
     )
@@ -57,7 +57,7 @@ function sendEmails(
 
 function scheduleByTime(time: "9" | "12" | "20") {
   return async () => {
-    const users = await userService.findMany({}, queryOptions);
+    const users = await userService.findMany({}, queryOptionsForNotifications);
 
     switch (time) {
       case "9":
