@@ -1,0 +1,38 @@
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  settingsId   String
+  settings     PlayerSettings          @relation(fields: [settingsId], references: [id])
+  category     NotificationPreferenceCategory
+  // disabledDays WeekDay[]
+  status NotificationPreferenceStatus
+
+  @@unique([settingsId, category])
+}
+
+enum NotificationPreferenceStatus {
+  Never
+  Once
+  Twice
+  Thrice
+  Always
+}
+
+enum WeekDay {
+  Sunday
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+}
+
+enum NotificationPreferenceCategory {
+  Challenge
+  MorningDailyRemainder
+  AfternoonDailyRemainder
+  NightDailyRemainder
+  Annoucements
+}

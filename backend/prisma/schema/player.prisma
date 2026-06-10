@@ -1,15 +1,17 @@
 model Player {
   id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  nickname  String   @unique
-  xp        Int      @default(0)
-  wins      Int      @default(0)
-  losses    Int      @default(0)
-  draws     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  gamesAsPlayerOne Game[] @relation("PlayerOne")
-  gamesAsPlayerTwo Game[] @relation("PlayerTwo")
+  userId   String         @unique
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nickname String         @unique
+  xp       Int            @default(0)
+  wins     Int            @default(0)
+  losses   Int            @default(0)
+  draws    Int            @default(0)
+  settings PlayerSettings?
+
+  gamesAsPlayerOne Game[]          @relation("PlayerOne")
+  gamesAsPlayerTwo Game[]          @relation("PlayerTwo")
 }

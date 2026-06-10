@@ -1,0 +1,11 @@
+model PlayerSettings {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  playerId String @unique
+  player   Player @relation(fields: [playerId], references: [id])
+  notificationPreferences NotificationPreference[]
+}
+
+
