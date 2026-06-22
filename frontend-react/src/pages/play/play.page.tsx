@@ -103,7 +103,6 @@ export default function PlayPage() {
   const [searching, setSearching] = useState(false);
   const [invitingId, setInvitingId] = useState<string | null>(null); // userId being invited
 
-  // ── emitters ──────────────────────────────────────────────────────────────
   const joinEmitter = game.useEmit<{}>("join_game", {
     ack: true,
     timeout: 6000,
@@ -122,7 +121,6 @@ export default function PlayPage() {
     { ack: true, timeout: 6000 }
   );
 
-  // ── socket connect ────────────────────────────────────────────────────────
   useEffect(() => {
     try {
       if (user) game.raw.rawSocket.connect();
@@ -256,6 +254,10 @@ export default function PlayPage() {
     },
     [player]
   );
+
+  game.on<GameServerState>("game_state", () => {
+    console.log("logged again....");
+  });
 
   game.on<GameServerState>("game_state", handleGameServerState);
 

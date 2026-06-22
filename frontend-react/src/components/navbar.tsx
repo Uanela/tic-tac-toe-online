@@ -29,9 +29,14 @@ export function Navbar() {
             Ranking
           </Link>
           {user && (
-            <Link to="/play" className={styles.link}>
-              Play
-            </Link>
+            <>
+              <Link to="/play" className={styles.link}>
+                Jogar
+              </Link>
+              <Link to="/players/me" className={styles.link}>
+                Perfil
+              </Link>
+            </>
           )}
         </div>
 
@@ -86,13 +91,22 @@ export function Navbar() {
           Ranking
         </Link>
         {user && (
-          <Link
-            to="/play"
-            className={styles.drawerLink}
-            onClick={() => setOpen(false)}
-          >
-            Play
-          </Link>
+          <>
+            <Link
+              to="/play"
+              className={styles.drawerLink}
+              onClick={() => setOpen(false)}
+            >
+              Jogar
+            </Link>
+            <Link
+              to="/players/me"
+              className={styles.drawerLink}
+              onClick={() => setOpen(false)}
+            >
+              Perfil
+            </Link>
+          </>
         )}
         {user ? (
           <button className={styles.drawerLogout} onClick={handleLogout}>

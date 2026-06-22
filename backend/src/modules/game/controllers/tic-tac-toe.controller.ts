@@ -182,7 +182,7 @@ class TicTacToeController extends ArkosGatewayController {
 
       // Both sockets join the Socket.IO room
       socket.join(roomId);
-      await socket.peer(playerX.socketId).join(roomId);
+      await socket.peer(playerX.socketId)?.join(roomId);
 
       ticTacToeService.setWaiting(null);
 
@@ -400,7 +400,7 @@ class TicTacToeController extends ArkosGatewayController {
     );
 
     socket.join(roomId);
-    await socket.peer(playerX.socketId).join(roomId);
+    await socket.peer(playerX.socketId)?.join(roomId);
 
     // Return ack payload for the accepter (same shape as game_start)
     ack?.({

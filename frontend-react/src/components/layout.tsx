@@ -1,11 +1,12 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "./navbar";
 import { InviteModal } from "./invite-modal";
 import { Toast } from "./toast";
 import { useAuth } from "../utils/contexts/auth.context";
+import { Howl } from "howler";
 
 interface InviteReceivedData {
   inviteId: string;
@@ -26,6 +27,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const game = useGateway("/tic-tac-toe");
+  var gameStartSound = useMemo(
+    () =>
+      new Howl({
+        src: ["/sounds/sfx/game-start.mp3"],
+      }),
+    []
+  );
 
   const [pendingInvite, setPendingInvite] = useState<InviteReceivedData | null>(
     null
@@ -50,6 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   game.on<InviteReceivedData>("invite_received", (data) => {
+    gameStartSound.play();
     setPendingInvite(data);
   });
 
