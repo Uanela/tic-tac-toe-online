@@ -4,4 +4,4 @@ export default function startCron() {
   startGameCron();
 }
 
-startCron();
+// startCron();
