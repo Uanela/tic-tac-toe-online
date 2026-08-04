@@ -6,6 +6,7 @@ import { Navbar } from "./navbar";
 import { InviteModal } from "./invite-modal";
 import { Toast } from "./toast";
 import { useAuth } from "../utils/contexts/auth.context";
+import type { GameServerState } from '../pages/play/play.page';
 
 interface InviteReceivedData {
   inviteId: string;
@@ -22,7 +23,7 @@ interface InviteExpiredData {
   message: string;
 }
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: { children: React.ReactNode; }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const game = useGateway("/tic-tac-toe");
@@ -66,6 +67,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     showToast("No opponent found. Try again!");
   });
 
+  game.on<GameServerState>("game_state", (data) => {
+    navigate(`/play?gameScreen=game&gameState=${JSON.stringify(data)}`);
+  });
+
   async function handleAcceptInvite() {
     if (!pendingInvite) return;
     const inviteId = pendingInvite.inviteId;
@@ -73,7 +78,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     navigate(`/play?inviteId=${inviteId}`);
   }
 
-  const declineInviteEmitter = game.useEmit<{ inviteId: string }>(
+  const declineInviteEmitter = game.useEmit<{ inviteId: string; }>(
     "decline_invite",
     { ack: true, timeout: 6000 }
   );
@@ -89,18 +94,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      {children}
+      { children }
 
-      {pendingInvite && (
+      { pendingInvite && (
         <InviteModal
-          fromNickname={pendingInvite.fromNickname}
-          expiresAt={pendingInvite.expiresAt}
-          onAccept={handleAcceptInvite}
-          onDecline={handleDeclineInvite}
+          fromNickname={ pendingInvite.fromNickname }
+          expiresAt={ pendingInvite.expiresAt }
+          onAccept={ handleAcceptInvite }
+          onDecline={ handleDeclineInvite }
         />
-      )}
+      ) }
 
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+      { toast && <Toast message={ toast } onDone={ () => setToast(null) } /> }
     </>
   );
 }
