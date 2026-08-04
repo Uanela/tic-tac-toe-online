@@ -30,7 +30,7 @@ export interface GameState {
   status: "playing" | "finished" | "starting";
 }
 
-interface GameServerState {
+export interface GameServerState {
   roomId: string;
   id: string;
   board: Cell[];
@@ -38,7 +38,7 @@ interface GameServerState {
   players: PlayerOnGame[];
   status: "playing" | "finished" | "starting";
   lastUpdate: Date;
-  lastMove: { index: number; mark: Mark } | null;
+  lastMove: { index: number; mark: Mark; } | null;
   result: Mark | null | "draw";
   counter: number;
 }
@@ -72,11 +72,29 @@ export default function PlayPage() {
     "/players/public/online"
   );
 
+  function getGameState(data: GameServerState): GameState {
+    const me = data.players.find((p) => p.id === player?.id)!;
+    const opponent = data.players.find((p) => p.id !== player?.id)!;
+    const playerX = data.players[0];
+    const playerO = data.players[1];
+
+    return {
+      ...data,
+      me: { ...me, myTurn: data.currentTurn === me.mark },
+      opponent: { ...opponent, myTurn: data.currentTurn === opponent.mark },
+      playerX: data.players[0],
+      playerO: data.players[1],
+      winner:
+        data.status === "finished" && data.result === "X" ? playerX : null,
+      loser: data.status === "finished" && data.result === "O" ? playerO : null,
+    };
+  }
+
   // ── core game state ───────────────────────────────────────────────────────
   const [screen, setScreen] = useState<Screen>(
     (searchParams.get("gameScreen") as Screen) || "join"
   );
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameState, setGameState] = useState<GameState | null>((searchParams.get("gameState") as Screen) ? getGameState(JSON.parse((searchParams.get("gameState")!)) as GameServerState) : null);
   const [counter, setCounter] = useState(0);
 
   useInterval(
@@ -108,16 +126,16 @@ export default function PlayPage() {
     ack: true,
     timeout: 6000,
   });
-  const moveEmitter = game.useEmit<{ roomId: string; index: number }>(
+  const moveEmitter = game.useEmit<{ roomId: string; index: number; }>(
     "make_move",
     { ack: true, timeout: 5000 }
   );
-  const sendInviteEmitter = game.useEmit<{ targetUserId: string }>(
+  const sendInviteEmitter = game.useEmit<{ targetUserId: string; }>(
     "send_invite",
     { ack: true, timeout: 6000 }
   );
 
-  const acceptInviteEmitter = game.useEmit<{ inviteId: string }>(
+  const acceptInviteEmitter = game.useEmit<{ inviteId: string; }>(
     "accept_invite",
     { ack: true, timeout: 6000 }
   );
@@ -129,7 +147,7 @@ export default function PlayPage() {
     } catch (err) {
       console.log(err);
     }
-    return () => {};
+    return () => { };
   }, [user]);
 
   useEffect(() => {
@@ -169,7 +187,7 @@ export default function PlayPage() {
     const timeout = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await api.get<{ data: Player[] }>(
+        const res = await api.get<{ data: Player[]; }>(
           `/players/public?nickname__icontains=${encodeURIComponent(q.trim())}&limit=6`
         );
         // exclude yourself
@@ -184,23 +202,7 @@ export default function PlayPage() {
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
-  function getGameState(data: GameServerState): GameState {
-    const me = data.players.find((p) => p.id === player?.id)!;
-    const opponent = data.players.find((p) => p.id !== player?.id)!;
-    const playerX = data.players[0];
-    const playerO = data.players[1];
 
-    return {
-      ...data,
-      me: { ...me, myTurn: data.currentTurn === me.mark },
-      opponent: { ...opponent, myTurn: data.currentTurn === opponent.mark },
-      playerX: data.players[0],
-      playerO: data.players[1],
-      winner:
-        data.status === "finished" && data.result === "X" ? playerX : null,
-      loser: data.status === "finished" && data.result === "O" ? playerO : null,
-    };
-  }
 
   // ── game handlers ─────────────────────────────────────────────────────────
   const handleGameServerState = useCallback(
@@ -257,8 +259,8 @@ export default function PlayPage() {
     [player]
   );
 
-  game.on<GameServerState>("game_state", handleGameServerState);
 
+  game.on<GameServerState>("game_state", handleGameServerState);
   game.on<OpponentLeftData>("opponent_left", async (data) => {
     setGameState(null);
     await refreshPlayer();
@@ -276,8 +278,8 @@ export default function PlayPage() {
     if (!result?.success) {
       setToast(
         result.error ||
-          (result as any).message ||
-          "Nǡo foi possivel encontrar adversário"
+        (result as any).message ||
+        "Nǡo foi possivel encontrar adversário"
       );
       return;
     }
@@ -348,10 +350,10 @@ export default function PlayPage() {
   // ── guards ────────────────────────────────────────────────────────────────
   if (!user) {
     return (
-      <div className={styles.gate}>
+      <div className={ styles.gate }>
         <h2>Sign in to play</h2>
         <p>You need an account to join ranked matches.</p>
-        <div className={styles.gateCta}>
+        <div className={ styles.gateCta }>
           <Link to="/auth/login" className="btn">
             Log in
           </Link>
@@ -365,7 +367,7 @@ export default function PlayPage() {
 
   if (!player) {
     return (
-      <div className={styles.gate}>
+      <div className={ styles.gate }>
         <h2>No player profile</h2>
         <p>
           Something went wrong with your player profile. Try signing up again.
@@ -376,237 +378,237 @@ export default function PlayPage() {
 
   // ── render ────────────────────────────────────────────────────────────────
   return (
-    <div className={styles.page}>
-      <div className={styles.statusBar}>
+    <div className={ styles.page }>
+      <div className={ styles.statusBar }>
         <span
-          className={`${styles.dot} ${game.status === "connected" ? styles.connected : ""}`}
+          className={ `${styles.dot} ${game.status === "connected" ? styles.connected : ""}` }
         />
-        <span className={styles.statusText}>{game.status}</span>{" "}
+        <span className={ styles.statusText }>{ game.status }</span>{ " " }
       </div>
 
-      {screen !== "game" && <OnlinePlayersCount />}
+      { screen !== "game" && <OnlinePlayersCount /> }
 
-      {screen === "join" && (
-        <div className={styles.screen}>
-          <div className={styles.joinInfo}>
-            <div className={styles.playerCard}>
-              <span className={styles.playerMark}>?</span>
-              <span className={styles.playerNick}>{player.nickname}</span>
-              <span className={styles.playerXp}>{player.xp} XP</span>
+      { screen === "join" && (
+        <div className={ styles.screen }>
+          <div className={ styles.joinInfo }>
+            <div className={ styles.playerCard }>
+              <span className={ styles.playerMark }>?</span>
+              <span className={ styles.playerNick }>{ player.nickname }</span>
+              <span className={ styles.playerXp }>{ player.xp } XP</span>
             </div>
           </div>
 
           <button
             className="btn"
-            onClick={handleJoin}
+            onClick={ handleJoin }
             disabled={
               game.status !== "connected" ||
               joinEmitter.loading ||
               !!sentInviteId
             }
           >
-            {joinEmitter.loading ? "Finding match…" : "Procurar Adversário"}
+            { joinEmitter.loading ? "Finding match…" : "Procurar Adversário" }
           </button>
 
-          <div className={styles.divider}>
+          <div className={ styles.divider }>
             <span>or challenge someone</span>
           </div>
 
-          {/* ── invite panel ── */}
+          {/* ── invite panel ── */ }
 
-          {sentInviteId ? (
-            <div className={styles.invitePending}>
-              <div className={styles.waitingDots}>
+          { sentInviteId ? (
+            <div className={ styles.invitePending }>
+              <div className={ styles.waitingDots }>
                 <span />
                 <span />
                 <span />
               </div>
-              <p className={styles.hint}>Waiting for opponent to accept…</p>
-              <button className="btn ghost" onClick={handleCancelInvite}>
+              <p className={ styles.hint }>Waiting for opponent to accept…</p>
+              <button className="btn ghost" onClick={ handleCancelInvite }>
                 Cancel
               </button>
             </div>
           ) : (
-            <div className={styles.invitePanel}>
+            <div className={ styles.invitePanel }>
               <button
-                className={`btn ghost ${styles.inviteToggle}`}
-                onClick={() => {
+                className={ `btn ghost ${styles.inviteToggle}` }
+                onClick={ () => {
                   setInviteOpen((o) => !o);
                   setSearchQuery("");
                   setSearchResults([]);
-                }}
+                } }
               >
-                {inviteOpen ? "✕ Close" : "⚔️ Challenge a player"}
+                { inviteOpen ? "✕ Close" : "⚔️ Challenge a player" }
               </button>
 
-              {inviteOpen ? (
+              { inviteOpen ? (
                 <>
-                  <div className={styles.searchBox}>
+                  <div className={ styles.searchBox }>
                     <input
                       className="input"
                       placeholder="Search by nickname…"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      value={ searchQuery }
+                      onChange={ (e) => setSearchQuery(e.target.value) }
                       autoFocus
                     />
-                    {searching && <span className={styles.searchSpinner} />}
+                    { searching && <span className={ styles.searchSpinner } /> }
                   </div>
 
-                  {searchResults.length > 0 && (
-                    <div className={styles.searchResults}>
-                      {searchResults.map((p) => (
-                        <div key={p.userId} className={styles.searchRow}>
-                          <div className={styles.searchInfo}>
+                  { searchResults.length > 0 && (
+                    <div className={ styles.searchResults }>
+                      { searchResults.map((p) => (
+                        <div key={ p.userId } className={ styles.searchRow }>
+                          <div className={ styles.searchInfo }>
                             <span
-                              style={{
+                              style={ {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 4,
-                              }}
-                              className={styles.searchNick}
+                              } }
+                              className={ styles.searchNick }
                             >
                               <p
-                                style={{
+                                style={ {
                                   width: 8,
                                   height: 8,
-                                }}
-                                className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
+                                } }
+                                className={ `${styles.dot} ${p.isOnline ? styles.connected : ""}` }
                               ></p>
-                              {p.nickname}
+                              { p.nickname }
                             </span>
                             <span
-                              style={{ marginLeft: 10 }}
-                              className={styles.searchXp}
+                              style={ { marginLeft: 10 } }
+                              className={ styles.searchXp }
                             >
-                              {p.xp} XP
+                              { p.xp } XP
                             </span>
                           </div>
                           <button
                             className="btn"
-                            onClick={() => handleSendInvite(p.userId)}
+                            onClick={ () => handleSendInvite(p.userId) }
                             disabled={
                               invitingId === p.userId ||
                               sendInviteEmitter.loading
                             }
                           >
-                            {invitingId === p.userId ? "Sending…" : "Challenge"}
+                            { invitingId === p.userId ? "Sending…" : "Challenge" }
                           </button>
                         </div>
-                      ))}
+                      )) }
                     </div>
-                  )}
+                  ) }
 
-                  {searchQuery.trim() &&
+                  { searchQuery.trim() &&
                     !searching &&
                     searchResults.length === 0 && (
-                      <p className={styles.hint}>No players found</p>
-                    )}
+                      <p className={ styles.hint }>No players found</p>
+                    ) }
                 </>
               ) : (
                 <div>
                   <div
-                    className={styles.header}
-                    style={{
+                    className={ styles.header }
+                    style={ {
                       marginTop: 32,
                       marginBottom: 16,
                       marginInline: "block",
                       fontWeight: "bold",
-                    }}
+                    } }
                   >
                     <p>Jogadores Online</p>
                   </div>
 
-                  <div className={styles.searchResults}>
-                    {players?.map(
+                  <div className={ styles.searchResults }>
+                    { players?.map(
                       (p: PlayerOnGame) =>
                         p.id !== player.id && (
-                          <div key={p.userId} className={styles.searchRow}>
-                            <div className={styles.searchInfo}>
+                          <div key={ p.userId } className={ styles.searchRow }>
+                            <div className={ styles.searchInfo }>
                               <span
-                                style={{
+                                style={ {
                                   display: "flex",
                                   alignItems: "center",
                                   gap: 4,
-                                }}
-                                className={styles.searchNick}
+                                } }
+                                className={ styles.searchNick }
                               >
                                 <p
-                                  style={{
+                                  style={ {
                                     width: 8,
                                     height: 8,
-                                  }}
-                                  className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
+                                  } }
+                                  className={ `${styles.dot} ${p.isOnline ? styles.connected : ""}` }
                                 ></p>
-                                {p.nickname}
+                                { p.nickname }
                               </span>
                               <span
-                                style={{ marginLeft: 10 }}
-                                className={styles.searchXp}
+                                style={ { marginLeft: 10 } }
+                                className={ styles.searchXp }
                               >
-                                {p.xp} XP
+                                { p.xp } XP
                               </span>
                             </div>
                             <button
                               className="btn"
-                              onClick={() => handleSendInvite(p.userId)}
+                              onClick={ () => handleSendInvite(p.userId) }
                               disabled={
                                 invitingId === p.userId ||
                                 sendInviteEmitter.loading
                               }
                             >
-                              {invitingId === p.userId
+                              { invitingId === p.userId
                                 ? "Sending…"
-                                : "Challenge"}
+                                : "Challenge" }
                             </button>
                           </div>
                         )
-                    )}
+                    ) }
                   </div>
                 </div>
-              )}
+              ) }
             </div>
-          )}
+          ) }
 
-          <p className={styles.hint}>Open in two tabs to test locally.</p>
+          <p className={ styles.hint }>Open in two tabs to test locally.</p>
         </div>
-      )}
+      ) }
 
-      {screen === "waiting" && (
-        <div className={styles.screen}>
-          <div className={styles.waitingDots}>
+      { screen === "waiting" && (
+        <div className={ styles.screen }>
+          <div className={ styles.waitingDots }>
             <span />
             <span />
             <span />
           </div>
-          <p className={styles.hint}>Waiting for an opponent…</p>
-          <button className="btn ghost" onClick={handleCancelWait}>
+          <p className={ styles.hint }>Waiting for an opponent…</p>
+          <button className="btn ghost" onClick={ handleCancelWait }>
             Cancel
           </button>
         </div>
-      )}
+      ) }
 
-      {screen === "game" && gameState && (
-        <div className={styles.screen}>
-          <Scoreboard data={gameState} />
+      { screen === "game" && gameState && (
+        <div className={ styles.screen }>
+          <Scoreboard data={ gameState } />
           <div
-            className={`${styles.turnBanner} ${gameState?.me.myTurn ? styles.myTurn : styles.theirTurn}`}
+            className={ `${styles.turnBanner} ${gameState?.me.myTurn ? styles.myTurn : styles.theirTurn}` }
           >
-            {gameState?.me.myTurn ? "▶ Your turn" : "Opponent thinking…"}{" "}
-            {counter} sec
+            { gameState?.me.myTurn ? "▶ Your turn" : "Opponent thinking…" }{ " " }
+            { counter } sec
           </div>
           <Board
-            board={gameState?.board || []}
-            isMyTurn={!!gameState?.me.myTurn}
-            onCellClick={handleCellClick}
-            poppedCell={poppedCell}
+            board={ gameState?.board || [] }
+            isMyTurn={ !!gameState?.me.myTurn }
+            onCellClick={ handleCellClick }
+            poppedCell={ poppedCell }
           />
         </div>
-      )}
+      ) }
 
-      {overlay && (
-        <GameOverOverlay {...overlay} onPlayAgain={handlePlayAgain} />
-      )}
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+      { overlay && (
+        <GameOverOverlay { ...overlay } onPlayAgain={ handlePlayAgain } />
+      ) }
+      { toast && <Toast message={ toast } onDone={ () => setToast(null) } /> }
     </div>
   );
 }

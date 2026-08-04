@@ -5,7 +5,7 @@ import { Manager } from "socket.io-client";
 import { useAuth } from "./auth.context";
 import { BASE, getToken } from "../../lib/api";
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: React.ReactNode; }) {
   const { player } = useAuth();
   const token = useMemo(getToken, [player]);
 
@@ -22,8 +22,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <WebSocketProvider manager={manager} options={{ auth: { token } }}>
-      {children}{" "}
+    <WebSocketProvider manager={ manager } options={ { auth: { token } } }>
+      { children }
     </WebSocketProvider>
   );
 }
