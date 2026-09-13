@@ -1,0 +1,97 @@
+.app {
+  /* No box of its own: the app lays out exactly as it did before it was wrapped. */
+  display: contents;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  padding: 0 24px calc(48px + env(safe-area-inset-bottom));
+  background: var(--bg);
+  transition: opacity 0.45s ease;
+}
+
+.lifting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logo {
+  align-self: center;
+  width: min(46vw, 190px);
+  height: auto;
+}
+
+.bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 340px);
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.label {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 26px;
+  margin-top: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  transition: width 0.18s linear;
+}
+
+.percent {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.credit {
+  margin-top: 20px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}

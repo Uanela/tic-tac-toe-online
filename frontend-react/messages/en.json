@@ -1,5 +1,7 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "boot_loading": "Loading game…",
+  "boot_credit": "Developed by Uanela Como and contributors",
   "nav_home": "Home",
   "nav_ranking": "Ranking",
   "nav_play": "Play",
