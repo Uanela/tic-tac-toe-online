@@ -1,5 +1,3 @@
-/* Deliberately not a `.btn`: the navbar's mobile rules hide every `.btn` in the
-   right-hand cluster, and the switcher has to stay reachable there. */
 .switcher {
   display: flex;
   flex-shrink: 0;
