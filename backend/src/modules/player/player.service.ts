@@ -2,7 +2,7 @@ import { BaseService } from "arkos/services";
 
 class PlayerService extends BaseService<"player"> {
   async findByUserId(userId: string) {
-    return this.findOne({ userId });
+    return this.findOne({ userId }, { omit: { type: true } });
   }
 
   async findRanking(page: number, limit: number) {
@@ -15,6 +15,7 @@ class PlayerService extends BaseService<"player"> {
           skip,
           take: limit,
           include: { user: { select: { email: true } } },
+          omit: { type: true },
         }
       ),
       this.count({}),

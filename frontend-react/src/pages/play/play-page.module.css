@@ -223,6 +223,8 @@
   flex-direction: column;
   gap: 4px;
   animation: slideDown 0.15s ease;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 @keyframes slideDown {

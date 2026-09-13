@@ -12,12 +12,13 @@ export type Cell = Mark | null;
 export type Board = Cell[];
 
 export interface SocketPlayer {
-  socketId: string;
+  socketId?: string;
   userId: string;
   playerId: string;
   nickname: string;
   mark: Mark;
   xp: number;
+  isBot: boolean;
 }
 
 export interface GameState {
@@ -59,7 +60,7 @@ export interface Invite {
   timer: NodeJS.Timeout;
 }
 
-const WIN_LINES = [
+export const WIN_LINES = [
   [0, 1, 2],
   [3, 4, 5],
   [6, 7, 8],
@@ -80,6 +81,7 @@ class TicTacToeService {
   } | null = null;
   private invites = new Map<string, Invite>();
   private waitingTimer: NodeJS.Timeout | null = null;
+  private botMatchTimer: NodeJS.Timeout | null = null;
 
   getInvite(id: string) {
     return this.invites.get(id);
@@ -102,6 +104,18 @@ class TicTacToeService {
   setWaitingTimer(t: NodeJS.Timeout | null) {
     if (this.waitingTimer) clearTimeout(this.waitingTimer);
     this.waitingTimer = t;
+  }
+
+  setBotMatchTimer(t: NodeJS.Timeout | null) {
+    if (this.botMatchTimer) clearTimeout(this.botMatchTimer);
+    this.botMatchTimer = t;
+  }
+
+  clearWaitingTimers() {
+    if (this.waitingTimer) clearTimeout(this.waitingTimer);
+    if (this.botMatchTimer) clearTimeout(this.botMatchTimer);
+    this.waitingTimer = null;
+    this.botMatchTimer = null;
   }
 
   emptyBoard(): Board {
@@ -159,8 +173,18 @@ class TicTacToeService {
     }
   }
 
-  opponent(room: GameRoom, socketId: string): SocketPlayer {
-    return room.players.find((p) => p.socketId !== socketId)!;
+  opponent(room: GameRoom, playerId: string): SocketPlayer {
+    return room.players.find((p) => p.playerId !== playerId)!;
+  }
+
+  seatedBotUserIds(): string[] {
+    const ids: string[] = [];
+    for (const room of this.rooms.values()) {
+      for (const player of room.players) {
+        if (player.isBot) ids.push(player.userId);
+      }
+    }
+    return ids;
   }
 
   async resolvePlayer(userId: string) {
@@ -244,7 +268,7 @@ class TicTacToeService {
     // Cancel waiting queue slot
     const waiting = ticTacToeService.getWaiting();
     if (waiting?.socketId === socketId) {
-      ticTacToeService.setWaitingTimer(null);
+      ticTacToeService.clearWaitingTimers();
       ticTacToeService.setWaiting(null);
     }
   }

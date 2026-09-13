@@ -8,6 +8,9 @@ const authQueryOptions: AuthPrismaQueryOptions<Prisma.UserDelegate> = {
     },
     include: {
       player: {
+        omit: {
+          type: true,
+        },
         include: {
           settings: {
             include: {

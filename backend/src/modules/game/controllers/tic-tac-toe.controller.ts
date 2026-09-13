@@ -4,20 +4,27 @@ import ticTacToeService, {
   GameRoom,
   GameState,
   Invite,
+  Mark,
   SocketPlayer,
 } from "../services/tic-tac-toe.service";
 import playerService from "../../player/player.service";
+import playerBotService from "../../player/player-bot.service";
 import { NotFoundError } from "arkos/error-handler";
 import { emailService } from "arkos/services";
 import userService from "../../user/user.service";
 import challengeEmail from "../utils/email-templates/challenge.email";
 import notificationPreferenceService from "../../notification-preference/notification-preference.service";
+import botService from "../services/bot.service";
 
-const WAITING_TIMEOUT_MS = 30_000; // 60s in queue
+const WAITING_TIMEOUT_MS = 20_000;
+const BOT_MATCH_TIMEOUT_MS = 10_000;
+const BOT_MOVE_MIN_MS = 1_000;
+const BOT_MOVE_MAX_MS = 5_000;
+const BOT_INVITE_ACCEPT_MS = 1_500;
 const INVITE_TIMEOUT_MS = 120_000; // 2min to accept
 const ROUND_TIME = 10_000;
 
-export let onlineSockets: { userId: string; socketId: string; }[] = [];
+export let onlineSockets: { userId: string; socketId: string }[] = [];
 
 class TicTacToeController extends ArkosGatewayController {
   // ─── helpers ────────────────────────────────────────────────────────────────
@@ -50,7 +57,7 @@ class TicTacToeController extends ArkosGatewayController {
     playerX: SocketPlayer,
     playerO: SocketPlayer,
     gameId: string,
-    roomId: string
+    roomId: string,
   ): Promise<GameState | null> {
     const lastUpdate = new Date();
 
@@ -75,6 +82,7 @@ class TicTacToeController extends ArkosGatewayController {
     socket.user(playerO.userId).socketsJoin(roomId);
 
     const gameState = this.emitGameState(socket, roomId);
+    this.scheduleBotTurn(socket, room);
 
     const interval = setInterval(() => {
       let currentState: GameState | null = null;
@@ -96,8 +104,8 @@ class TicTacToeController extends ArkosGatewayController {
       if (currentState.status === "finished" || diff >= 30_000) {
         clearInterval(interval);
         if (diff >= 30_000) {
-          this.cleanupBySocket(socket, playerX.socketId);
-          this.cleanupBySocket(socket, playerO.socketId);
+          this.cleanupBySocket(socket, playerX.socketId ?? socket.id);
+          this.cleanupBySocket(socket, playerO.socketId ?? socket.id);
         }
         return;
       }
@@ -108,8 +116,134 @@ class TicTacToeController extends ArkosGatewayController {
           currentTurn: currentState?.currentTurn === "X" ? "O" : "X",
         });
         this.emitGameState(socket, roomId);
+
+        const live = ticTacToeService.getRoom(roomId);
+        if (live) this.scheduleBotTurn(socket, live);
       }
     }, ROUND_TIME);
+
+    return gameState;
+  }
+
+  private async applyMove(
+    socket: ArkosSocket,
+    room: GameRoom,
+    player: SocketPlayer,
+    index: number,
+  ) {
+    ticTacToeService.makeMove(room.roomId, index, player);
+
+    this.emitGameState(socket, room.roomId);
+    ticTacToeService.updateRoom(room.roomId);
+
+    const result = ticTacToeService.checkWinner(room.board);
+    if (!result) return this.scheduleBotTurn(socket, room);
+
+    room.status = "finished";
+
+    const winnerPlayer = room.players.find((p) => p.mark === result);
+    const loserPlayer = winnerPlayer
+      ? ticTacToeService.opponent(room, winnerPlayer.playerId)
+      : undefined;
+
+    const gameResult =
+      result === "draw"
+        ? "Draw"
+        : room.players[0].mark === result
+          ? "PlayerOneWin"
+          : "PlayerTwoWin";
+
+    ticTacToeService.updateRoom(room.roomId, {
+      result,
+      status: "finished",
+    });
+
+    await ticTacToeService.finishGame(
+      room.gameId,
+      gameResult,
+      winnerPlayer?.playerId ?? room.players[0].playerId,
+      loserPlayer?.playerId ?? room.players[1].playerId,
+    );
+
+    this.emitGameState(socket, room.roomId);
+
+    socket.to(room.roomId).socketsLeave(room.roomId);
+    socket.leave(room.roomId);
+
+    ticTacToeService.deleteRoom(room.roomId);
+  }
+
+  private scheduleBotTurn(socket: ArkosSocket, room: GameRoom) {
+    const current = room.players.find((p) => p.mark === room.currentTurn);
+    if (!current?.isBot) return;
+
+    const delay =
+      BOT_MOVE_MIN_MS + Math.random() * (BOT_MOVE_MAX_MS - BOT_MOVE_MIN_MS);
+
+    setTimeout(async () => {
+      const live = ticTacToeService.getRoom(room.roomId);
+      if (!live || live.status !== "playing") return;
+
+      const bot = live.players.find((p) => p.mark === live.currentTurn);
+      if (!bot?.isBot || bot.playerId !== current.playerId) return;
+
+      const index = botService.chooseMove(live.board, bot.mark);
+      if (index < 0) return;
+
+      try {
+        await this.applyMove(socket, live, bot, index);
+      } catch {
+        // The room can be torn down during the delay; the bot's move is moot then.
+      }
+    }, delay);
+  }
+
+  private async beginGameFromInvite(
+    socket: ArkosSocket,
+    invite: Invite,
+    toSocketId: string | undefined,
+    toIsBot: boolean,
+  ) {
+    const roomId = `room_${Date.now()}`;
+
+    const [fromPlayerFullData, toPlayerFullData] = await Promise.all([
+      playerService.findById(invite.fromPlayerId),
+      playerService.findById(invite.toPlayerId),
+    ]);
+
+    const playerX: SocketPlayer = {
+      socketId: invite.fromSocketId,
+      userId: invite.fromUserId,
+      playerId: invite.fromPlayerId,
+      nickname: invite.fromNickname,
+      xp: fromPlayerFullData!.xp,
+      mark: "X",
+      isBot: false,
+    };
+    const playerO: SocketPlayer = {
+      socketId: toSocketId,
+      userId: invite.toUserId,
+      playerId: invite.toPlayerId,
+      nickname: invite.toNickname,
+      xp: toPlayerFullData!.xp,
+      mark: "O",
+      isBot: toIsBot,
+    };
+
+    const game = await ticTacToeService.createGame(
+      playerX.playerId,
+      playerO.playerId,
+    );
+    const gameState = await this.startGame(
+      socket,
+      playerX,
+      playerO,
+      game.id,
+      roomId,
+    );
+
+    socket.join(roomId);
+    socket.to(invite.fromSocketId).socketsJoin(roomId);
 
     return gameState;
   }
@@ -119,7 +253,7 @@ class TicTacToeController extends ArkosGatewayController {
   joinGame = async (
     socket: ArkosSocket,
     _data: any,
-    ack?: (res: any) => void
+    ack?: (res: any) => void,
   ) => {
     const userId = socket.currentUser!.id;
     const player = await ticTacToeService.resolvePlayer(userId);
@@ -139,8 +273,8 @@ class TicTacToeController extends ArkosGatewayController {
     const waiting = ticTacToeService.getWaiting();
 
     if (waiting && waiting.userId !== socket.currentUser?.id) {
-      // Cancel the waiting timeout for the other player
-      ticTacToeService.setWaitingTimer(null);
+      // Cancel the waiting timeouts for the other player — a human took the slot.
+      ticTacToeService.clearWaitingTimers();
 
       const roomId = `room_${Date.now()}`;
 
@@ -156,6 +290,7 @@ class TicTacToeController extends ArkosGatewayController {
         nickname: waiting.nickname,
         xp: waitingFullData!.xp,
         mark: "X",
+        isBot: false,
       };
       const playerO: SocketPlayer = {
         socketId: socket.id,
@@ -164,11 +299,12 @@ class TicTacToeController extends ArkosGatewayController {
         nickname: player.nickname,
         xp: playerFullData!.xp,
         mark: "O",
+        isBot: false,
       };
 
       const game = await ticTacToeService.createGame(
         playerX.playerId,
-        playerO.playerId
+        playerO.playerId,
       );
 
       const gameState = await this.startGame(
@@ -176,13 +312,13 @@ class TicTacToeController extends ArkosGatewayController {
         playerX,
         playerO,
         game.id,
-        roomId
+        roomId,
       );
       if (!gameState) return;
 
       // Both sockets join the Socket.IO room
       socket.join(roomId);
-      socket.to(playerX.socketId).socketsJoin(roomId);
+      if (playerX.socketId) socket.to(playerX.socketId).socketsJoin(roomId);
 
       ticTacToeService.setWaiting(null);
 
@@ -194,12 +330,14 @@ class TicTacToeController extends ArkosGatewayController {
     }
 
     // No one waiting — put this player in the queue with a timeout
-    ticTacToeService.setWaiting({
+    const waitingEntry = {
       socketId: socket.id,
       userId,
       playerId: player.id,
       nickname: player.nickname,
-    });
+    };
+
+    ticTacToeService.setWaiting(waitingEntry);
 
     const timer = setTimeout(() => {
       const still = ticTacToeService.getWaiting();
@@ -213,15 +351,82 @@ class TicTacToeController extends ArkosGatewayController {
 
     ticTacToeService.setWaitingTimer(timer);
 
+    const botTimer = setTimeout(
+      () => this.matchWithBot(socket, waitingEntry),
+      BOT_MATCH_TIMEOUT_MS,
+    );
+
+    ticTacToeService.setBotMatchTimer(botTimer);
+
     ack?.({ success: true, data: { waiting: true } });
   };
+
+  private async matchWithBot(
+    socket: ArkosSocket,
+    waiting: {
+      socketId: string;
+      userId: string;
+      playerId: string;
+      nickname: string;
+    },
+  ) {
+    const still = ticTacToeService.getWaiting();
+    if (still?.socketId !== waiting.socketId) return;
+
+    ticTacToeService.setWaiting(null);
+    ticTacToeService.clearWaitingTimers();
+
+    try {
+      const bot = await playerBotService.findOrCreateBot();
+
+      const human = await playerService.findById(waiting.playerId);
+      if (!human) return;
+
+      const roomId = `room_${Date.now()}`;
+      const firstMark: Mark = Math.random() < 0.5 ? "X" : "O";
+
+      const humanPlayer: SocketPlayer = {
+        socketId: waiting.socketId,
+        userId: waiting.userId,
+        playerId: waiting.playerId,
+        nickname: waiting.nickname,
+        xp: human.xp,
+        mark: firstMark,
+        isBot: false,
+      };
+      const botPlayer: SocketPlayer = {
+        userId: bot.userId,
+        playerId: bot.id,
+        nickname: bot.nickname,
+        xp: bot.xp,
+        mark: firstMark === "X" ? "O" : "X",
+        isBot: true,
+      };
+
+      const [playerX, playerO] =
+        humanPlayer.mark === "X"
+          ? [humanPlayer, botPlayer]
+          : [botPlayer, humanPlayer];
+
+      const game = await ticTacToeService.createGame(
+        playerX.playerId,
+        playerO.playerId,
+      );
+
+      await this.startGame(socket, playerX, playerO, game.id, roomId);
+    } catch {
+      socket.emit("waiting_timeout", {
+        message: "No opponent found in time. Please try again.",
+      });
+    }
+  }
 
   // ─── send_invite ─────────────────────────────────────────────────────────────
 
   sendInvite = async (
     socket: ArkosSocket,
-    data: { targetUserId: string; },
-    ack?: (res: any) => void
+    data: { targetUserId: string },
+    ack?: (res: any) => void,
   ) => {
     const userId = socket.currentUser!.id;
 
@@ -256,7 +461,7 @@ class TicTacToeController extends ArkosGatewayController {
     //   });
 
     const targetPlayer = await ticTacToeService.resolvePlayer(
-      data.targetUserId
+      data.targetUserId,
     );
     if (!targetPlayer)
       return ack?.({
@@ -273,6 +478,7 @@ class TicTacToeController extends ArkosGatewayController {
     //   });
 
     const targetSocketId = targetSockets[0]?.id;
+    const targetIsBot = await playerBotService.isBotUser(data.targetUserId);
     const inviteId = `inv_${Date.now()}_${userId}`;
 
     const timer = setTimeout(() => {
@@ -316,12 +522,14 @@ class TicTacToeController extends ArkosGatewayController {
       expiresAt: invite.expiresAt,
     });
 
-    const targetOnline = (await socket.user(data.targetUserId).activeRooms()).length > 0;
+    const targetOnline =
+      (await socket.user(data.targetUserId).activeRooms()).length > 0;
     if (
+      !targetIsBot &&
       !targetOnline &&
       (await notificationPreferenceService.canNotify(
         data.targetUserId,
-        "Challenge"
+        "Challenge",
       ))
     )
       emailService
@@ -333,14 +541,32 @@ class TicTacToeController extends ArkosGatewayController {
         .catch(console.error);
 
     ack?.({ success: true, data: { inviteId, expiresAt: invite.expiresAt } });
+
+    if (targetIsBot)
+      setTimeout(async () => {
+        const live = ticTacToeService.getInvite(inviteId);
+        if (!live) return;
+
+        clearTimeout(live.timer);
+        ticTacToeService.deleteInvite(inviteId);
+
+        try {
+          await this.beginGameFromInvite(socket, live, undefined, true);
+        } catch {
+          socket.emit("invite_expired", {
+            inviteId,
+            message: `${live.toNickname} did not respond in time.`,
+          });
+        }
+      }, BOT_INVITE_ACCEPT_MS);
   };
 
   // ─── accept_invite ────────────────────────────────────────────────────────
 
   acceptInvite = async (
     socket: ArkosSocket,
-    data: { inviteId: string; },
-    ack?: (res: any) => void
+    data: { inviteId: string },
+    ack?: (res: any) => void,
   ) => {
     const userId = socket.currentUser!.id;
     const invite = ticTacToeService.getInvite(data?.inviteId);
@@ -363,60 +589,25 @@ class TicTacToeController extends ArkosGatewayController {
     clearTimeout(invite.timer);
     ticTacToeService.deleteInvite(invite.id);
 
-    const roomId = `room_${Date.now()}`;
-    const [fromPlayerFullData, toPlayerFullData] = await Promise.all([
-      playerService.findById(invite.fromPlayerId),
-      playerService.findById(invite.toPlayerId),
-    ]);
-
-    // Inviter = X, accepter = O  (consistent, clear)
-    const playerX: SocketPlayer = {
-      socketId: invite.fromSocketId,
-      userId: invite.fromUserId,
-      playerId: invite.fromPlayerId,
-      nickname: invite.fromNickname,
-      xp: fromPlayerFullData!.xp,
-      mark: "X",
-    };
-    const playerO: SocketPlayer = {
-      socketId: socket.id,
-      userId,
-      playerId: invite.toPlayerId,
-      nickname: invite.toNickname,
-      xp: toPlayerFullData!.xp,
-      mark: "O",
-    };
-
-    const game = await ticTacToeService.createGame(
-      playerX.playerId,
-      playerO.playerId
-    );
-    const gameState = await this.startGame(
+    const gameState = await this.beginGameFromInvite(
       socket,
-      playerX,
-      playerO,
-      game.id,
-      roomId
+      invite,
+      socket.id,
+      await playerBotService.isBotUser(invite.toUserId),
     );
 
-    socket.join(roomId);
-    socket.to(playerX.socketId).socketsJoin(roomId);
-
-    // Return ack payload for the accepter (same shape as game_start)
     ack?.({
       success: true,
       data: gameState,
     });
-
-    this.emitGameState(socket, roomId);
   };
 
   // ─── decline_invite ───────────────────────────────────────────────────────
 
   declineInvite = async (
     socket: ArkosSocket,
-    data: { inviteId: string; },
-    ack?: (res: any) => void
+    data: { inviteId: string },
+    ack?: (res: any) => void,
   ) => {
     const userId = socket.currentUser!.id;
     const invite = ticTacToeService.getInvite(data?.inviteId);
@@ -445,65 +636,26 @@ class TicTacToeController extends ArkosGatewayController {
 
   makeMove = async (
     socket: ArkosSocket,
-    data: { roomId: string; index: number; },
-    ack?: (res: any) => void
+    data: { roomId: string; index: number },
+    ack?: (res: any) => void,
   ) => {
     const { roomId, index } = data ?? {};
     const room = ticTacToeService.getRoom(roomId);
 
     if (!room) throw new NotFoundError("Room not found");
 
-    const player = room.players.find((p) => p.socketId === socket.id);
+    const player = room.players.find(
+      (p) => p.userId === socket.currentUser?.id,
+    );
     if (!player) throw new NotFoundError("Your are not in this room");
 
     try {
-      ticTacToeService.makeMove(roomId, index, player);
+      await this.applyMove(socket, room, player, index);
     } catch (err: any) {
-      return ack?.({ sucess: false, error: err.message });
+      return ack?.({ success: false, error: err.message });
     }
 
-    this.emitGameState(socket, roomId);
-
     ack?.({ success: true });
-
-    ticTacToeService.updateRoom(room.roomId);
-
-    const result = ticTacToeService.checkWinner(room.board);
-    if (!result) return;
-
-    room.status = "finished";
-
-    const winnerPlayer =
-      result !== null ? room.players.find((p) => p.mark === result) : undefined;
-    const loserPlayer = winnerPlayer
-      ? ticTacToeService.opponent(room, winnerPlayer.socketId)
-      : undefined;
-
-    const gameResult =
-      result === null || result === "draw"
-        ? "Draw"
-        : room.players[0].mark === result
-          ? "PlayerOneWin"
-          : "PlayerTwoWin";
-
-    ticTacToeService.updateRoom(room.roomId, {
-      result,
-      status: "finished",
-    });
-
-    await ticTacToeService.finishGame(
-      room.gameId,
-      gameResult,
-      winnerPlayer?.playerId ?? room.players[0].playerId,
-      loserPlayer?.playerId ?? room.players[1].playerId
-    );
-
-    this.emitGameState(socket, roomId);
-
-    socket.to(roomId).socketsLeave(roomId);
-    socket.leave(roomId);
-
-    ticTacToeService.deleteRoom(roomId);
   };
 
   onConnect = async (socket: ArkosSocket) => {
@@ -521,7 +673,7 @@ class TicTacToeController extends ArkosGatewayController {
 
   private async cleanupBySocket(socket: ArkosSocket, socketId: string) {
     onlineSockets = onlineSockets.filter(
-      (s) => s.userId !== socket.currentUser?.id
+      (s) => s.userId !== socket.currentUser?.id,
     );
     ticTacToeService.cancelWaitingQueueBySocketId(socketId);
     const invite = ticTacToeService.cancelInviteByScoket(socketId);
@@ -538,11 +690,11 @@ class TicTacToeController extends ArkosGatewayController {
     room.status = "finished";
     ticTacToeService.updateRoom(room.id, { status: "finished" });
 
-    const opp = ticTacToeService.opponent(room, socket.id);
     const leavingPlayer = room.players.find((p) => p.socketId === socket.id)!;
+    const opp = ticTacToeService.opponent(room, leavingPlayer.playerId);
 
     const gameResult =
-      room.players[0].socketId === opp.socketId
+      room.players[0].playerId === opp.playerId
         ? "PlayerOneWin"
         : "PlayerTwoWin";
 
@@ -552,11 +704,11 @@ class TicTacToeController extends ArkosGatewayController {
       room.gameId,
       gameResult,
       opp.playerId,
-      leavingPlayer.playerId
+      leavingPlayer.playerId,
     );
 
     try {
-      socket.to(opp.socketId).emit("opponent_left", {
+      socket.user(opp.userId).emit("opponent_left", {
         message: "Your opponent disconnected. You win by default!",
       });
     } catch {
@@ -578,3 +730,4 @@ class TicTacToeController extends ArkosGatewayController {
 const ticTacToeController = new TicTacToeController();
 
 export default ticTacToeController;
+
