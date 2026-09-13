@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { m } from "../paraglide/messages.js";
+import { RichText } from "./rich-text";
 import styles from "./invite-modal.module.css";
 
 interface InviteModalProps {
@@ -30,17 +32,17 @@ export function InviteModal({
     <div className={styles.overlay}>
       <div className={styles.box}>
         <div className={styles.emoji}>⚔️</div>
-        <div className={styles.title}>Challenge!</div>
+        <div className={styles.title}>{m.invite_title()}</div>
         <div className={styles.sub}>
-          <strong>{fromNickname}</strong> wants to play against you
+          <RichText parts={ m.invite_body.parts({ nickname: fromNickname }) } />
         </div>
         <div className={styles.timer}>{secondsLeft}s</div>
         <div className={styles.actions}>
           <button className="btn" onClick={onAccept}>
-            Accept
+            {m.invite_accept()}
           </button>
           <button className="btn ghost" onClick={onDecline}>
-            Decline
+            {m.invite_decline()}
           </button>
         </div>
       </div>

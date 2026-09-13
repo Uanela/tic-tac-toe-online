@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/contexts/auth.context";
+import { m } from "../../paraglide/messages.js";
+import { RichText } from "../../components/rich-text";
 import styles from "./auth.module.css";
 
 export default function SignupPage() {
@@ -20,67 +22,68 @@ export default function SignupPage() {
       await signup({ email, password, player: { nickname } });
       navigate("/play");
     } catch (err: any) {
-      setError(err.message || "Signup failed");
+      // Server-facing: the API's own message is shown verbatim when it has one.
+      setError(err.message || m.auth_signup_failed());
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.card}>
-        <div className={styles.heading}>
-          <h1>Create account</h1>
-          <p>Pick a nickname and enter the arena</p>
+    <div className={ styles.page }>
+      <div className={ styles.card }>
+        <div className={ styles.heading }>
+          <h1>{ m.auth_signup_title() }</h1>
+          <p>{ m.auth_signup_sub() }</p>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label>Nickname</label>
+        <form onSubmit={ handleSubmit } className={styles.form}>
+          <div className={ styles.field }>
+            <label>{ m.auth_nickname() }</label>
             <input
               className="input"
               type="text"
               placeholder="ShadowKnight"
-              maxLength={20}
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              maxLength={ 20 }
+              value={ nickname }
+              onChange={ (e) => setNickname(e.target.value) }
               required
             />
           </div>
 
-          <div className={styles.field}>
-            <label>Email</label>
+          <div className={ styles.field }>
+            <label>{ m.auth_email() }</label>
             <input
               className="input"
               type="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={ email }
+              onChange={ (e) => setEmail(e.target.value) }
               required
             />
           </div>
 
-          <div className={styles.field}>
-            <label>Password</label>
+          <div className={ styles.field }>
+            <label>{ m.auth_password() }</label>
             <input
               className="input"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={ password }
+              onChange={ (e) => setPassword(e.target.value) }
               required
             />
           </div>
 
-          {error && <p className="error-msg">{error}</p>}
+          { error && <p className="error-msg">{ error }</p> }
 
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Creating account…" : "Get started"}
+          <button className="btn" type="submit" disabled={ loading }>
+            { loading ? m.auth_signup_loading() : m.auth_signup_submit() }
           </button>
         </form>
 
-        <p className={styles.footer}>
-          Have an account? <Link to="/auth/login">Log in</Link>
+        <p className={ styles.footer }>
+          <RichText parts={ m.auth_signup_footer.parts({}) } />
         </p>
       </div>
     </div>

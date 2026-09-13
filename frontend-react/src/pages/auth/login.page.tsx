@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/contexts/auth.context";
+import { m } from "../../paraglide/messages.js";
+import { RichText } from "../../components/rich-text";
 import styles from "./auth.module.css";
 
 export default function LoginPage() {
@@ -19,54 +21,55 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/play");
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      // Server-facing: the API's own message is shown verbatim when it has one.
+      setError(err.message || m.auth_login_failed());
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.card}>
-        <div className={styles.heading}>
-          <h1>Welcome back</h1>
-          <p>Log in to resume your streak</p>
+    <div className={ styles.page }>
+      <div className={ styles.card }>
+        <div className={ styles.heading }>
+          <h1>{ m.auth_login_title() }</h1>
+          <p>{ m.auth_login_sub() }</p>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label>Email</label>
+        <form onSubmit={ handleSubmit } className={styles.form}>
+          <div className={ styles.field }>
+            <label>{ m.auth_email() }</label>
             <input
               className="input"
               type="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={ email }
+              onChange={ (e) => setEmail(e.target.value) }
               required
             />
           </div>
 
-          <div className={styles.field}>
-            <label>Password</label>
+          <div className={ styles.field }>
+            <label>{ m.auth_password() }</label>
             <input
               className="input"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={ password }
+              onChange={ (e) => setPassword(e.target.value) }
               required
             />
           </div>
 
-          {error && <p className="error-msg">{error}</p>}
+          { error && <p className="error-msg">{ error }</p> }
 
-          <button className="btn" type="submit" disabled={loading}>
-            {loading ? "Logging in…" : "Log in"}
+          <button className="btn" type="submit" disabled={ loading }>
+            { loading ? m.auth_login_loading() : m.auth_login_submit() }
           </button>
         </form>
 
-        <p className={styles.footer}>
-          No account? <Link to="/auth/signup">Sign up</Link>
+        <p className={ styles.footer }>
+          <RichText parts={ m.auth_login_footer.parts({}) } />
         </p>
       </div>
     </div>

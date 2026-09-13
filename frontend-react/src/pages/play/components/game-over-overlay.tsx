@@ -1,3 +1,5 @@
+import { formatNumber } from "../../../lib/format";
+import { m } from "../../../paraglide/messages.js";
 import styles from "./game-over-overlay.module.css";
 
 interface GameOverOverlayProps {
@@ -29,13 +31,15 @@ export function GameOverOverlay({
         </div>
         {sub && <div className={styles.sub}>{sub}</div>}
         {xpGained !== undefined && (
-          <div className={styles.xp}>+{xpGained} XP</div>
+          <div className={styles.xp}>
+            {m.gameover_xp({ xp: formatNumber(xpGained) })}
+          </div>
         )}
         <button className="btn" onClick={() => onPlayAgain("invite")}>
-          Play Again
+          {m.gameover_play_again()}
         </button>
         <button className="btn" onClick={() => onPlayAgain()}>
-          Continue
+          {m.gameover_continue()}
         </button>
       </div>
     </div>

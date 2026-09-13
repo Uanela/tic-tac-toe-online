@@ -3,6 +3,8 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { api } from "../../lib/api";
+import { formatNumber } from "../../lib/format";
+import { m } from "../../paraglide/messages.js";
 import { Board } from "./components/board";
 import { Scoreboard } from "./components/scoreboard";
 import { GameOverOverlay } from "./components/game-over-overlay";
@@ -28,7 +30,11 @@ export interface GameState {
   winner: PlayerOnGame | null;
   loser: PlayerOnGame | null;
   status: "playing" | "finished" | "starting";
+  /** Optional: states restored from a pre-vanishing gameState query param carry no doomed. */
+  doomed?: Doomed;
 }
+
+type Doomed = Record<Mark, number | null>;
 
 export interface GameServerState {
   roomId: string;
@@ -41,6 +47,8 @@ export interface GameServerState {
   lastMove: { index: number; mark: Mark; } | null;
   result: Mark | null | "draw";
   counter: number;
+  /** Marks the cap will evict on each side's next placement, or null under three marks. */
+  doomed?: Doomed;
 }
 
 interface PlayerOnGame extends Player {
@@ -61,6 +69,30 @@ interface Player {
 }
 
 const XP_MAP = { win: 50, draw: 15, loss: 5 };
+
+/**
+ * Which ending to show, not the words to show. The copy is looked up during
+ * render so switching language still re-translates an overlay already on screen.
+ */
+type Overlay =
+  | { kind: "draw"; }
+  | { kind: "win"; nickname: string; }
+  | { kind: "lose"; nickname: string; }
+  | { kind: "left"; message: string; };
+
+/** Renders the socket's own status enum — the raw value used to reach this banner. */
+function statusLabel(status: string): string {
+  switch (status) {
+    case "connected":
+      return m.play_status_connected();
+    case "connecting":
+      return m.play_status_connecting();
+    case "reconnecting":
+      return m.play_status_reconnecting();
+    default:
+      return m.play_status_disconnected();
+  }
+}
 
 export default function PlayPage() {
   const { user, player, refreshPlayer } = useAuth();
@@ -91,10 +123,26 @@ export default function PlayPage() {
   }
 
   // ── core game state ───────────────────────────────────────────────────────
+  // The query param outlives the room it names: it survives a reload, a stale tab and a
+  // server restart, so it is untrusted input and has to fail back to the join screen
+  // rather than throw. These run during render, and there is no error boundary, so a
+  // throw here blanks the entire app.
+  const [restoredState] = useState<GameState | null>(() => {
+    const raw = searchParams.get("gameState");
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as GameServerState;
+      // A torn-down room leaves no players, and getGameState dereferences them.
+      if (!Array.isArray(parsed?.players) || parsed.players.length < 2) return null;
+      return getGameState(parsed);
+    } catch {
+      return null;
+    }
+  });
   const [screen, setScreen] = useState<Screen>(
-    (searchParams.get("gameScreen") as Screen) || "join"
+    searchParams.get("gameScreen") === "game" && restoredState ? "game" : "join"
   );
-  const [gameState, setGameState] = useState<GameState | null>((searchParams.get("gameState") as Screen) ? getGameState(JSON.parse((searchParams.get("gameState")!)) as GameServerState) : null);
+  const [gameState, setGameState] = useState<GameState | null>(restoredState);
   const [counter, setCounter] = useState(0);
 
   useInterval(
@@ -105,13 +153,12 @@ export default function PlayPage() {
   );
 
   const [poppedCell, setPoppedCell] = useState<number | null>(null);
-  const [overlay, setOverlay] = useState<{
-    emoji: string;
-    title: string;
-    sub: string;
-    titleColor?: string;
-    xpGained?: number;
-  } | null>(null);
+
+  // The cap evicts a mark only when its owner places a fourth, so exactly one side is ever
+  // at risk: whoever is on move. Both players see that mark dimmed, not just its owner.
+  const doomedCell = gameState?.doomed?.[gameState.currentTurn] ?? null;
+
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
 
   // ── invite panel state ────────────────────────────────────────────────────
   const [sentInviteId, setSentInviteId] = useState<string | null>(null);
@@ -165,7 +212,7 @@ export default function PlayPage() {
       setOverlay(null);
 
       if (!result?.success && inviteId) {
-        setToast(result?.error ?? "Invite already expired");
+        setToast(result?.error ?? m.play_join_invite_expired());
         return;
       }
       setSearchParams({ inviteId: "" });
@@ -231,28 +278,11 @@ export default function PlayPage() {
           (data.status === "finished" && !data.result) ||
           data.result === "draw"
         ) {
-          setOverlay({
-            emoji: "🤝",
-            title: "Draw!",
-            sub: "Well played by both.",
-            xpGained: XP_MAP.draw,
-          });
+          setOverlay({ kind: "draw" });
         } else if (data.result === state.me.mark) {
-          setOverlay({
-            emoji: "🏆",
-            title: "You win!",
-            sub: `You beat ${state.loser?.nickname}!`,
-            titleColor: "var(--x-color)",
-            xpGained: XP_MAP.win,
-          });
+          setOverlay({ kind: "win", nickname: state.loser?.nickname ?? "" });
         } else {
-          setOverlay({
-            emoji: "😤",
-            title: "You lose",
-            sub: `${state.winner?.nickname} wins this round`,
-            titleColor: "var(--error)",
-            xpGained: XP_MAP.loss,
-          });
+          setOverlay({ kind: "lose", nickname: state.winner?.nickname ?? "" });
         }
       }
     },
@@ -264,12 +294,8 @@ export default function PlayPage() {
   game.on<OpponentLeftData>("opponent_left", async (data) => {
     setGameState(null);
     await refreshPlayer();
-    setOverlay({
-      emoji: "🚪",
-      title: "Opponent left",
-      sub: data.message,
-      xpGained: XP_MAP.win,
-    });
+    // The server composes this one, so it is not translated on the client.
+    setOverlay({ kind: "left", message: data.message });
   });
 
   // ── actions ───────────────────────────────────────────────────────────────
@@ -279,7 +305,7 @@ export default function PlayPage() {
       setToast(
         result.error ||
         (result as any).message ||
-        "Nǡo foi possivel encontrar adversário"
+        m.play_join_no_opponent()
       );
       return;
     }
@@ -299,7 +325,7 @@ export default function PlayPage() {
     setInvitingId(null);
 
     if (!result?.success)
-      return setToast(result.error || "Couldn't send invite");
+      return setToast(result.error || m.play_join_invite_failed());
 
     setSentInviteId(result.data.inviteId);
     setSearchQuery("");
@@ -351,14 +377,14 @@ export default function PlayPage() {
   if (!user) {
     return (
       <div className={ styles.gate }>
-        <h2>Sign in to play</h2>
-        <p>You need an account to join ranked matches.</p>
+        <h2>{ m.play_gate_sign_in_title() }</h2>
+        <p>{ m.play_gate_sign_in_sub() }</p>
         <div className={ styles.gateCta }>
           <Link to="/auth/login" className="btn">
-            Log in
+            { m.nav_login() }
           </Link>
           <Link to="/auth/signup" className="btn ghost">
-            Sign up
+            { m.nav_signup() }
           </Link>
         </div>
       </div>
@@ -368,10 +394,8 @@ export default function PlayPage() {
   if (!player) {
     return (
       <div className={ styles.gate }>
-        <h2>No player profile</h2>
-        <p>
-          Something went wrong with your player profile. Try signing up again.
-        </p>
+        <h2>{ m.play_gate_no_profile_title() }</h2>
+        <p>{ m.play_gate_no_profile_sub() }</p>
       </div>
     );
   }
@@ -383,7 +407,7 @@ export default function PlayPage() {
         <span
           className={ `${styles.dot} ${game.status === "connected" ? styles.connected : ""}` }
         />
-        <span className={ styles.statusText }>{ game.status }</span>{ " " }
+        <span className={ styles.statusText }>{ statusLabel(game.status) }</span>{ " " }
       </div>
 
       { screen !== "game" && <OnlinePlayersCount /> }
@@ -394,7 +418,9 @@ export default function PlayPage() {
             <div className={ styles.playerCard }>
               <span className={ styles.playerMark }>?</span>
               <span className={ styles.playerNick }>{ player.nickname }</span>
-              <span className={ styles.playerXp }>{ player.xp } XP</span>
+              <span className={ styles.playerXp }>
+                { m.xp_upper({ xp: formatNumber(player.xp) }) }
+              </span>
             </div>
           </div>
 
@@ -407,11 +433,11 @@ export default function PlayPage() {
               !!sentInviteId
             }
           >
-            { joinEmitter.loading ? "Finding match…" : "Procurar Adversário" }
+            { joinEmitter.loading ? m.play_join_finding() : m.play_join_find() }
           </button>
 
           <div className={ styles.divider }>
-            <span>or challenge someone</span>
+            <span>{ m.play_join_or() }</span>
           </div>
 
           {/* ── invite panel ── */ }
@@ -423,9 +449,9 @@ export default function PlayPage() {
                 <span />
                 <span />
               </div>
-              <p className={ styles.hint }>Waiting for opponent to accept…</p>
+              <p className={ styles.hint }>{ m.play_join_pending() }</p>
               <button className="btn ghost" onClick={ handleCancelInvite }>
-                Cancel
+                { m.play_join_cancel() }
               </button>
             </div>
           ) : (
@@ -438,7 +464,7 @@ export default function PlayPage() {
                   setSearchResults([]);
                 } }
               >
-                { inviteOpen ? "✕ Close" : "⚔️ Challenge a player" }
+                { inviteOpen ? m.play_join_close() : m.play_join_challenge_toggle() }
               </button>
 
               { inviteOpen ? (
@@ -446,7 +472,7 @@ export default function PlayPage() {
                   <div className={ styles.searchBox }>
                     <input
                       className="input"
-                      placeholder="Search by nickname…"
+                      placeholder={ m.play_join_search_placeholder() }
                       value={ searchQuery }
                       onChange={ (e) => setSearchQuery(e.target.value) }
                       autoFocus
@@ -480,7 +506,7 @@ export default function PlayPage() {
                               style={ { marginLeft: 10 } }
                               className={ styles.searchXp }
                             >
-                              { p.xp } XP
+                              { m.xp_upper({ xp: formatNumber(p.xp) }) }
                             </span>
                           </div>
                           <button
@@ -491,7 +517,9 @@ export default function PlayPage() {
                               sendInviteEmitter.loading
                             }
                           >
-                            { invitingId === p.userId ? "Sending…" : "Challenge" }
+                            { invitingId === p.userId
+                              ? m.play_join_sending()
+                              : m.play_join_challenge() }
                           </button>
                         </div>
                       )) }
@@ -501,7 +529,7 @@ export default function PlayPage() {
                   { searchQuery.trim() &&
                     !searching &&
                     searchResults.length === 0 && (
-                      <p className={ styles.hint }>No players found</p>
+                      <p className={ styles.hint }>{ m.play_join_none_found() }</p>
                     ) }
                 </>
               ) : (
@@ -515,7 +543,7 @@ export default function PlayPage() {
                       fontWeight: "bold",
                     } }
                   >
-                    <p>Jogadores Online</p>
+                    <p>{ m.play_join_online_title() }</p>
                   </div>
 
                   <div className={ styles.searchResults }>
@@ -545,7 +573,7 @@ export default function PlayPage() {
                                 style={ { marginLeft: 10 } }
                                 className={ styles.searchXp }
                               >
-                                { p.xp } XP
+                                { m.xp_upper({ xp: formatNumber(p.xp) }) }
                               </span>
                             </div>
                             <button
@@ -557,8 +585,8 @@ export default function PlayPage() {
                               }
                             >
                               { invitingId === p.userId
-                                ? "Sending…"
-                                : "Challenge" }
+                                ? m.play_join_sending()
+                                : m.play_join_challenge() }
                             </button>
                           </div>
                         )
@@ -569,7 +597,7 @@ export default function PlayPage() {
             </div>
           ) }
 
-          <p className={ styles.hint }>Open in two tabs to test locally.</p>
+          <p className={ styles.hint }>{ m.play_join_test_hint() }</p>
         </div>
       ) }
 
@@ -580,9 +608,9 @@ export default function PlayPage() {
             <span />
             <span />
           </div>
-          <p className={ styles.hint }>Waiting for an opponent…</p>
+          <p className={ styles.hint }>{ m.play_join_waiting() }</p>
           <button className="btn ghost" onClick={ handleCancelWait }>
-            Cancel
+            { m.play_join_cancel() }
           </button>
         </div>
       ) }
@@ -593,22 +621,63 @@ export default function PlayPage() {
           <div
             className={ `${styles.turnBanner} ${gameState?.me.myTurn ? styles.myTurn : styles.theirTurn}` }
           >
-            { gameState?.me.myTurn ? "▶ Your turn" : "Opponent thinking…" }{ " " }
-            { counter } sec
+            { gameState?.me.myTurn ? m.play_turn_mine() : m.play_turn_theirs() }{ " " }
+            { m.play_turn_seconds({ seconds: counter }) }
           </div>
           <Board
             board={ gameState?.board || [] }
             isMyTurn={ !!gameState?.me.myTurn }
             onCellClick={ handleCellClick }
             poppedCell={ poppedCell }
+            doomedCell={ doomedCell }
           />
         </div>
       ) }
 
       { overlay && (
-        <GameOverOverlay { ...overlay } onPlayAgain={ handlePlayAgain } />
+        <GameOverOverlay
+          { ...endingFor(overlay) }
+          onPlayAgain={ handlePlayAgain }
+        />
       ) }
       { toast && <Toast message={ toast } onDone={ () => setToast(null) } /> }
     </div>
   );
+}
+
+/** Turns the recorded ending into the copy to render, in the active locale. */
+function endingFor(overlay: Overlay) {
+  switch (overlay.kind) {
+    case "draw":
+      return {
+        emoji: "🤝",
+        title: m.play_overlay_draw_title(),
+        sub: m.play_overlay_draw_sub(),
+        xpGained: XP_MAP.draw,
+      };
+    case "win":
+      return {
+        emoji: "🏆",
+        title: m.play_overlay_win_title(),
+        sub: m.play_overlay_win_sub({ nickname: overlay.nickname }),
+        titleColor: "var(--x-color)",
+        xpGained: XP_MAP.win,
+      };
+    case "lose":
+      return {
+        emoji: "😤",
+        title: m.play_overlay_lose_title(),
+        sub: m.play_overlay_lose_sub({ nickname: overlay.nickname }),
+        titleColor: "var(--error)",
+        xpGained: XP_MAP.loss,
+      };
+    case "left":
+      return {
+        emoji: "🚪",
+        title: m.play_overlay_left_title(),
+        // The server composes this one, so it is not translated on the client.
+        sub: overlay.message,
+        xpGained: XP_MAP.win,
+      };
+  }
 }

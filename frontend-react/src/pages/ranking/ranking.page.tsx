@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import { formatNumber } from "../../lib/format";
+import { m } from "../../paraglide/messages.js";
 import styles from "./ranking-page.module.css";
 
 interface PlayerRow {
@@ -23,7 +25,7 @@ export default function RankingPage() {
   useEffect(() => {
     setLoading(true);
     api
-      .get<{ players: PlayerRow[]; total: number }>(
+      .get<{ players: PlayerRow[]; total: number; }>(
         `/players/ranking?page=${page}&limit=${LIMIT}`
       )
       .then((res) => {
@@ -34,24 +36,24 @@ export default function RankingPage() {
   }, [page]);
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1>Global Ranking</h1>
-        <p>{total} players competing</p>
+    <div className={ styles.page }>
+      <div className={ styles.header }>
+        <h1>{ m.ranking_title() }</h1>
+        <p>{ m.ranking_competing({ total: formatNumber(total) }) }</p>
       </div>
 
-      <div className={styles.table}>
-        <div className={styles.thead}>
+      <div className={ styles.table }>
+        <div className={ styles.thead }>
           <span>#</span>
-          <span>Player</span>
-          <span>W / L / D</span>
+          <span>{ m.ranking_player() }</span>
+          <span>{ m.ranking_wld() }</span>
         </div>
 
-        {loading ? (
-          <div className={styles.loading}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className={styles.skeleton} />
-            ))}
+        { loading ? (
+          <div className={ styles.loading }>
+            { Array.from({ length: 8 }).map((_, i) => (
+              <div key={ i } className={ styles.skeleton } />
+            )) }
           </div>
         ) : (
           players.map((p, i) => {
@@ -62,59 +64,72 @@ export default function RankingPage() {
 
             return (
               <div
-                key={p.id}
-                className={`${styles.row} ${rank <= 3 ? styles[`top${rank}`] : ""}`}
+                key={ p.id }
+                className={ `${styles.row} ${rank <= 3 ? styles[`top${rank}`] : ""}` }
               >
-                <span className={styles.rank}>
-                  {rank === 1
+                <span className={ styles.rank }>
+                  { rank === 1
                     ? "🥇"
                     : rank === 2
                       ? "🥈"
                       : rank === 3
                         ? "🥉"
-                        : rank}
+                        : rank }
                 </span>
 
-                <div className={styles.playerCol}>
-                  <span className={styles.nick}>{p.nickname}</span>
-                  <span className={styles.xp}>{p.xp.toLocaleString()} xp</span>
+                <div className={ styles.playerCol }>
+                  <span className={ styles.nick }>{ p.nickname }</span>
+                  <span className={ styles.xp }>
+                    { m.xp_lower({ xp: formatNumber(p.xp) }) }
+                  </span>
                 </div>
 
-                <div className={styles.metaCol}>
-                  <div className={styles.wld}>
-                    <span className={styles.wins}>{p.wins}W</span>
-                    <span className={styles.losses}>{p.losses}L</span>
-                    <span className={styles.draws}>{p.draws}D</span>
+                <div className={ styles.metaCol }>
+                  <div className={ styles.wld }>
+                    <span className={ styles.wins }>
+                      { p.wins }
+                      { m.ranking_w_suffix() }
+                    </span>
+                    <span className={ styles.losses }>
+                      { p.losses }
+                      { m.ranking_l_suffix() }
+                    </span>
+                    <span className={ styles.draws }>
+                      { p.draws }
+                      { m.ranking_d_suffix() }
+                    </span>
                   </div>
-                  <span className={styles.pct}>{winPct}% win</span>
+                  <span className={ styles.pct }>
+                    { m.ranking_win_pct({ pct: winPct }) }
+                  </span>
                 </div>
               </div>
             );
           })
-        )}
+        ) }
       </div>
 
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
+      { totalPages > 1 && (
+        <div className={ styles.pagination }>
           <button
             className="btn ghost"
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page === 1}
+            onClick={ () => setPage((p) => p - 1) }
+            disabled={ page === 1 }
           >
-            ← Prev
+            { m.ranking_prev() }
           </button>
-          <span className={styles.pageInfo}>
-            {page} / {totalPages}
+          <span className={ styles.pageInfo }>
+            { page } / { totalPages }
           </span>
           <button
             className="btn ghost"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page === totalPages}
+            onClick={ () => setPage((p) => p + 1) }
+            disabled={ page === totalPages }
           >
-            Next →
+            { m.ranking_next() }
           </button>
         </div>
-      )}
+      ) }
     </div>
   );
 }

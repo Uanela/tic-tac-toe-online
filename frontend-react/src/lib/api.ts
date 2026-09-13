@@ -1,3 +1,5 @@
+import { m } from "../paraglide/messages.js";
+
 export const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export function getToken() {
@@ -25,7 +27,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   const json = await res.json();
-  if (!res.ok) throw new Error(json?.message || "Request failed");
+  // The API answers in whatever language its own validation chose, so its message
+  // is shown as-is; this is only the fallback for a body that carries none.
+  if (!res.ok) throw new Error(json?.message || m.api_request_failed());
   return json;
 }
 

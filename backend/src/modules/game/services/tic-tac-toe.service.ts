@@ -10,6 +10,7 @@ import { ArkosSocket } from "arkos/websockets";
 export type Mark = "X" | "O";
 export type Cell = Mark | null;
 export type Board = Cell[];
+export type MarkOrder = Record<Mark, number[]>;
 
 export interface SocketPlayer {
   socketId?: string;
@@ -31,6 +32,7 @@ export interface GameState {
   lastUpdate: Date;
   lastMove: { index: number; mark: Mark } | null;
   result: Mark | "draw" | null;
+  doomed: Record<Mark, number | null>;
 }
 
 export interface GameRoom {
@@ -39,11 +41,13 @@ export interface GameRoom {
   gameId: string;
   players: [SocketPlayer, SocketPlayer];
   board: Board;
+  placed: MarkOrder;
   currentTurn: Mark;
   status: "playing" | "finished" | "starting";
   result: Mark | "draw" | null;
   lastMove: { index: number; mark: Mark } | null;
   lastUpdate: Date;
+  startedAt: Date;
 }
 
 export interface Invite {
@@ -59,6 +63,8 @@ export interface Invite {
   expiresAt: number;
   timer: NodeJS.Timeout;
 }
+
+export const MAX_MARKS = 3;
 
 export const WIN_LINES = [
   [0, 1, 2],
@@ -122,13 +128,14 @@ class TicTacToeService {
     return Array(9).fill(null);
   }
 
-  checkWinner(board: Board): Mark | "draw" | null {
+  // The mark cap keeps at least three cells empty, so a full board is unreachable
+  // and a draw can only come from the controller's game clock.
+  checkWinner(board: Board): Mark | null {
     for (const [a, b, c] of WIN_LINES) {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
         return board[a] as Mark;
       }
     }
-    if (board.every((cell) => cell !== null)) return "draw";
     return null;
   }
 
@@ -216,6 +223,32 @@ class TicTacToeService {
     }
   }
 
+  /**
+   * The mark that leaves the board when `mark` places again, or null while it is under the
+   * cap. Oldest goes by default, but a mark that is the missing third of a line the opponent
+   * already holds the other two of is skipped: the eviction ignores where its owner placed,
+   * so removing it would hand over a win they had no way to avoid. If every mark is such a
+   * blocker the oldest goes anyway, and `giftsWin` is the rule the dim must agree with.
+   */
+  nextVictim(board: Board, placed: number[], mark: Mark): number | null {
+    if (placed.length < MAX_MARKS) return null;
+
+    for (const index of placed) if (!this.giftsWin(board, index, mark)) return index;
+    return placed[0];
+  }
+
+  private giftsWin(board: Board, index: number, mark: Mark): boolean {
+    const opponent = mark === "X" ? "O" : "X";
+
+    for (const line of WIN_LINES) {
+      if (!line.includes(index)) continue;
+      if (line.every((cell) => cell === index || board[cell] === opponent))
+        return true;
+    }
+
+    return false;
+  }
+
   getRoomGameState(roomId: string): GameState {
     const room = this.getRoom(roomId);
     if (!room) throw new NotFoundError();
@@ -236,6 +269,10 @@ class TicTacToeService {
       lastUpdate: room.lastUpdate || new Date(),
       lastMove: room.lastMove || null,
       result: room.result,
+      doomed: {
+        X: this.nextVictim(room.board, room.placed.X, "X"),
+        O: this.nextVictim(room.board, room.placed.O, "O"),
+      },
     };
   }
 
@@ -254,7 +291,19 @@ class TicTacToeService {
     if (room.board[index] !== null)
       throw new BadRequestError("Invalid cell index.");
 
+    // Resolved against the board as the player sees it, before their own mark lands, so the
+    // cell that leaves is the one `doomed` was pointing at a moment earlier.
+    const victim = this.nextVictim(room.board, room.placed[player.mark], player.mark);
+
     room.board[index] = player.mark;
+    room.placed[player.mark].push(index);
+
+    if (victim !== null) {
+      const order = room.placed[player.mark];
+      order.splice(order.indexOf(victim), 1);
+      room.board[victim] = null;
+    }
+
     room.currentTurn = player.mark === "X" ? "O" : "X";
 
     ticTacToeService.updateRoom(room.roomId, {

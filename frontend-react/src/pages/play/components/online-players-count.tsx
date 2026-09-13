@@ -1,4 +1,5 @@
 import { useFetch } from "../../../hooks/use-fetch";
+import { m } from "../../../paraglide/messages.js";
 import styles from "../play-page.module.css";
 
 export default function OnlinePlayersCount() {
@@ -9,7 +10,7 @@ export default function OnlinePlayersCount() {
   return (
     <div className={styles.statusBar}>
       <p className={styles.statusText}>
-        {count ? `${count} Online Player${count > 1 ? "s" : ""}` : ""}
+        {count ? m.online_count({ count }) : ""}
       </p>
     </div>
   );

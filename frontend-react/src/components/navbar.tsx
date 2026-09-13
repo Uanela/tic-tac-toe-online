@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../utils/contexts/auth.context";
+import { m } from "../paraglide/messages.js";
+import { LocaleSwitcher } from "./locale-switcher";
 import styles from "./navbar.module.css";
 
 export function Navbar() {
@@ -26,48 +28,50 @@ export function Navbar() {
         {/* desktop links */}
         <div className={styles.links}>
           <Link to="/ranking" className={styles.link}>
-            Ranking
+            { m.nav_ranking() }
           </Link>
-          {user && (
+          { user && (
             <Link to="/play" className={styles.link}>
-              Play
+              { m.nav_play() }
             </Link>
-          )}
+          ) }
         </div>
 
         <div className={styles.right}>
-          {user ? (
+          <LocaleSwitcher />
+
+          { user ? (
             <>
-              {player && (
+              { player && (
                 <span className={styles.xp}>
                   <span className={styles.xpDot} />
-                  {player.xp} XP
+                  { player.xp } XP
                 </span>
-              )}
+              ) }
               <span className={styles.nick}>
-                {player?.nickname ?? user.email}
+                { player?.nickname ?? user.email }
               </span>
               {/* desktop only */}
-              <button className="btn ghost" onClick={handleLogout}>
-                Logout
+              <button className="btn ghost" onClick={ handleLogout }>
+                { m.nav_logout() }
               </button>
             </>
           ) : (
             <>
               {/* desktop only */}
               <Link to="/auth/login" className="btn ghost">
-                Login
+                { m.nav_login() }
               </Link>
               <Link to="/auth/signup" className="btn">
-                Sign up
+                { m.nav_signup() }
               </Link>
             </>
-          )}
+          ) }
 
           <button
-            className={`${styles.hamburger} ${open ? styles.open : ""}`}
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
+            className={ `${styles.hamburger} ${open ? styles.open : ""}` }
+            onClick={ () => setOpen((v) => !v) }
+            aria-label={ m.nav_menu() }
           >
             <span />
             <span />
@@ -77,45 +81,45 @@ export function Navbar() {
       </nav>
 
       {/* mobile drawer */}
-      <div className={`${styles.drawer} ${open ? styles.open : ""}`}>
+      <div className={ `${styles.drawer} ${open ? styles.open : ""}` }>
         <Link
           to="/ranking"
           className={styles.drawerLink}
-          onClick={() => setOpen(false)}
+          onClick={ () => setOpen(false) }
         >
-          Ranking
+          { m.nav_ranking() }
         </Link>
-        {user && (
+        { user && (
           <Link
             to="/play"
             className={styles.drawerLink}
-            onClick={() => setOpen(false)}
+            onClick={ () => setOpen(false) }
           >
-            Play
+            { m.nav_play() }
           </Link>
-        )}
-        {user ? (
-          <button className={styles.drawerLogout} onClick={handleLogout}>
-            Logout
+        ) }
+        { user ? (
+          <button className={styles.drawerLogout} onClick={ handleLogout }>
+            { m.nav_logout() }
           </button>
         ) : (
           <>
             <Link
               to="/auth/login"
               className={styles.drawerLink}
-              onClick={() => setOpen(false)}
+              onClick={ () => setOpen(false) }
             >
-              Login
+              { m.nav_login() }
             </Link>
             <Link
               to="/auth/signup"
               className={styles.drawerLink}
-              onClick={() => setOpen(false)}
+              onClick={ () => setOpen(false) }
             >
-              Sign up
+              { m.nav_signup() }
             </Link>
           </>
-        )}
+        ) }
       </div>
     </>
   );
