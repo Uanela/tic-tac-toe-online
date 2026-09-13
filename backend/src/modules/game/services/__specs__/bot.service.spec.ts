@@ -69,13 +69,13 @@ test("chooseMove reports no move when the board is full", () => {
 });
 
 test("chooseMove prefers the win that survives the vanishing, not the one it destroys", () => {
-  // X holds 0, 1 and 4, so 0 is doomed. Playing 2 completes 0-1-2 and evicts 0, which
-  // breaks the very line it just made. Playing 7 completes 1-4-7 after the eviction and
-  // is the only real win. A search that ignores the mark cap scores both as a win and
-  // splits between them.
-  const board: Board = ["X", "X", null, "O", "X", null, "O", null, "O"];
-  const placed = order([0, 1, 4], [3, 6, 8]);
-  const realWin = 7;
+  // X holds 0, 4 and 7, so 0 is doomed: no line makes it the third of an O pair, and the
+  // mark cap takes the oldest. Playing 1 then completes 1-4-7 and wins. Playing 8 completes
+  // 0-4-8, but evicting 0 breaks the very line it just made. A search that ignores the cap
+  // scores both as a win and splits between them.
+  const board: Board = ["X", null, "O", "O", "X", "O", null, "X", null];
+  const placed = order([0, 4, 7], [2, 3, 5]);
+  const realWin = 1;
   const runs = 2000;
 
   let taken = 0;

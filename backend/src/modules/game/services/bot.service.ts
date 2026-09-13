@@ -1,8 +1,7 @@
-import {
+import ticTacToeService, {
   Board,
   Mark,
   MarkOrder,
-  MAX_MARKS,
   WIN_LINES,
 } from "./tic-tac-toe.service";
 
@@ -64,11 +63,18 @@ class BotService {
     index: number,
     mark: Mark
   ): [Board, MarkOrder] {
+    // Same rule the live game applies, resolved from the same pre-move board. Reading it off
+    // the service keeps one definition of which mark leaves.
+    const victim = ticTacToeService.nextVictim(board, placed[mark], mark);
+
     const next = [...board];
     next[index] = mark;
 
     const order = [...placed[mark], index];
-    if (order.length > MAX_MARKS) next[order.shift()!] = null;
+    if (victim !== null) {
+      order.splice(order.indexOf(victim), 1);
+      next[victim] = null;
+    }
 
     return [next, { ...placed, [mark]: order }];
   }

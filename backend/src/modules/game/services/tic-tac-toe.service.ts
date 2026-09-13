@@ -223,9 +223,30 @@ class TicTacToeService {
     }
   }
 
-  private doomedIndex(room: GameRoom, mark: Mark): number | null {
-    const placed = room.placed[mark];
-    return placed.length >= MAX_MARKS ? placed[0] : null;
+  /**
+   * The mark that leaves the board when `mark` places again, or null while it is under the
+   * cap. Oldest goes by default, but a mark that is the missing third of a line the opponent
+   * already holds the other two of is skipped: the eviction ignores where its owner placed,
+   * so removing it would hand over a win they had no way to avoid. If every mark is such a
+   * blocker the oldest goes anyway, and `giftsWin` is the rule the dim must agree with.
+   */
+  nextVictim(board: Board, placed: number[], mark: Mark): number | null {
+    if (placed.length < MAX_MARKS) return null;
+
+    for (const index of placed) if (!this.giftsWin(board, index, mark)) return index;
+    return placed[0];
+  }
+
+  private giftsWin(board: Board, index: number, mark: Mark): boolean {
+    const opponent = mark === "X" ? "O" : "X";
+
+    for (const line of WIN_LINES) {
+      if (!line.includes(index)) continue;
+      if (line.every((cell) => cell === index || board[cell] === opponent))
+        return true;
+    }
+
+    return false;
   }
 
   getRoomGameState(roomId: string): GameState {
@@ -249,8 +270,8 @@ class TicTacToeService {
       lastMove: room.lastMove || null,
       result: room.result,
       doomed: {
-        X: this.doomedIndex(room, "X"),
-        O: this.doomedIndex(room, "O"),
+        X: this.nextVictim(room.board, room.placed.X, "X"),
+        O: this.nextVictim(room.board, room.placed.O, "O"),
       },
     };
   }
@@ -270,11 +291,18 @@ class TicTacToeService {
     if (room.board[index] !== null)
       throw new BadRequestError("Invalid cell index.");
 
+    // Resolved against the board as the player sees it, before their own mark lands, so the
+    // cell that leaves is the one `doomed` was pointing at a moment earlier.
+    const victim = this.nextVictim(room.board, room.placed[player.mark], player.mark);
+
     room.board[index] = player.mark;
     room.placed[player.mark].push(index);
 
-    const placed = room.placed[player.mark];
-    if (placed.length > MAX_MARKS) room.board[placed.shift()!] = null;
+    if (victim !== null) {
+      const order = room.placed[player.mark];
+      order.splice(order.indexOf(victim), 1);
+      room.board[victim] = null;
+    }
 
     room.currentTurn = player.mark === "X" ? "O" : "X";
 
