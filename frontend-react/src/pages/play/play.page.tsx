@@ -112,12 +112,9 @@ export default function PlayPage() {
 
   const [poppedCell, setPoppedCell] = useState<number | null>(null);
 
-  // The cap evicts my oldest mark once I place a fourth, so the warning is only shown while
-  // I am the one about to place: nothing of mine is at risk during the opponent's turn.
-  const doomedCell =
-    gameState?.me.myTurn && gameState.doomed
-      ? gameState.doomed[gameState.me.mark] ?? null
-      : null;
+  // The cap evicts a mark only when its owner places a fourth, so exactly one side is ever
+  // at risk: whoever is on move. Both players see that mark dimmed, not just its owner.
+  const doomedCell = gameState?.doomed?.[gameState.currentTurn] ?? null;
 
   const [overlay, setOverlay] = useState<{
     emoji: string;

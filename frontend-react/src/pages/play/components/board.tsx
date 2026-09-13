@@ -7,7 +7,7 @@ interface BoardProps {
   isMyTurn: boolean;
   onCellClick: (index: number) => void;
   poppedCell: number | null;
-  /** Own mark that the cap will evict on the next placement, dimmed while it is my turn. */
+  /** The mark the cap will evict on the next placement — the current player's oldest. */
   doomedCell: number | null;
 }
 
