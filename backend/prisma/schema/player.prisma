@@ -6,6 +6,7 @@ model Player {
   userId   String         @unique
   user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   nickname String         @unique
+  type     PlayerType     @default(Human)
   xp       Int            @default(0)
   wins     Int            @default(0)
   losses   Int            @default(0)
@@ -14,4 +15,9 @@ model Player {
 
   gamesAsPlayerOne Game[]          @relation("PlayerOne")
   gamesAsPlayerTwo Game[]          @relation("PlayerTwo")
+}
+
+enum PlayerType {
+  Human
+  Bot
 }
