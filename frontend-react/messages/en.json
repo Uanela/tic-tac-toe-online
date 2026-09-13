@@ -90,7 +90,6 @@
 	"play_join_close": "✕ Close",
 	"play_join_search_placeholder": "Search by nickname…",
 	"play_join_challenge": "Challenge",
-	"play_join_sending": "Sending…",
 	"play_join_none_found": "No players found",
 	"play_join_online_title": "Players Online",
 	"play_join_test_hint": "Open in two tabs to test locally.",
@@ -104,10 +103,6 @@
 	"match_found_title": "Opponent found",
 	"match_found_countdown": "Starting in {seconds}…",
 	"match_found_loading": "Loading opponent…",
-	"play_status_connected": "Connected",
-	"play_status_connecting": "Connecting…",
-	"play_status_reconnecting": "Reconnecting…",
-	"play_status_disconnected": "Disconnected",
 	"play_gate_sign_in_title": "Sign in to play",
 	"play_gate_sign_in_sub": "You need an account to join ranked matches.",
 	"play_gate_no_profile_title": "No player profile",
@@ -163,5 +158,7 @@
 	"notifications_status_once": "Once a week",
 	"notifications_status_twice": "Twice a week",
 	"notifications_status_thrice": "Three times a week",
-	"notifications_status_always": "Every day"
+	"notifications_status_always": "Every day",
+	"nav_conn_on": "On",
+	"nav_conn_off": "Off"
 }

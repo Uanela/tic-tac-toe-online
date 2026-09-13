@@ -251,6 +251,11 @@
   background: var(--surface2);
 }
 
+.challengeBtn {
+  padding: 12px 18px;
+  font-size: 1rem;
+}
+
 .searchInfo {
   display: flex;
   flex-direction: column;
@@ -279,4 +284,15 @@
   gap: 12px;
   width: 100%;
   max-width: 340px;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 16px;
+    gap: 12px;
+  }
+
+  .screen {
+    gap: 16px;
+  }
 }

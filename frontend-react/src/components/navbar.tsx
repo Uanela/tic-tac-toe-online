@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../utils/contexts/auth.context";
 import { m } from "../paraglide/messages.js";
 import { LocaleSwitcher } from "./locale-switcher";
@@ -8,7 +9,10 @@ import styles from "./navbar.module.css";
 export function Navbar() {
   const { user, player, logout } = useAuth();
   const navigate = useNavigate();
+  const game = useGateway("/tic-tac-toe");
   const [open, setOpen] = useState(false);
+  const nickname = player?.nickname ?? user?.email;
+  const online = game.status === "connected";
 
   function handleLogout() {
     logout();
@@ -41,7 +45,9 @@ export function Navbar() {
         </div>
 
         <div className={styles.right}>
-          <LocaleSwitcher />
+          <div className={styles.barLocale}>
+            <LocaleSwitcher />
+          </div>
 
           { user ? (
             <>
@@ -51,8 +57,12 @@ export function Navbar() {
                   { player.xp } XP
                 </span>
               ) }
+              <span className={`${styles.conn} ${online ? styles.connOn : styles.connOff}`}>
+                <span className={styles.connDot} />
+                { online ? m.nav_conn_on() : m.nav_conn_off() }
+              </span>
               <span className={styles.nick}>
-                { player?.nickname ?? user.email }
+                { nickname }
               </span>
               {/* desktop only */}
               <button className="btn ghost" onClick={ handleLogout }>
@@ -108,6 +118,10 @@ export function Navbar() {
         >
           { m.nav_settings() }
         </Link>
+        <div className={styles.drawerAccount}>
+          { user && <span className={styles.drawerNick}>{ nickname }</span> }
+          <LocaleSwitcher />
+        </div>
         { user ? (
           <button className={styles.drawerLogout} onClick={ handleLogout }>
             { m.nav_logout() }
