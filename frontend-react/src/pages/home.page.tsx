@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../utils/contexts/auth.context";
 import { api } from "../lib/api";
+import { formatNumber } from "../lib/format";
+import { m } from "../paraglide/messages.js";
 import styles from "./home-page.module.css";
 import OnlinePlayersCount from "./play/components/online-players-count";
 
@@ -20,91 +22,110 @@ export default function HomePage() {
 
   useEffect(() => {
     api
-      .get<{ players: PlayerRow[] }>("/players/ranking?page=1&limit=5")
+      .get<{ players: PlayerRow[]; }>("/players/ranking?page=1&limit=5")
       .then((res) => setTop(res.players))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero}>
-        <div className={styles.badge}>Multiplayer · Real-time</div>
+    <div className={ styles.page }>
+      <section className={ styles.hero }>
+        <div className={ styles.badge }>{ m.home_badge() }</div>
         <OnlinePlayersCount />
-        <h1 className={styles.title}>
-          <span className={styles.xWord}>X</span> vs{" "}
-          <span className={styles.oWord}>O</span>
+        <h1 className={ styles.title }>
+          <span className={ styles.xWord }>X</span> vs{ " " }
+          <span className={ styles.oWord }>O</span>
         </h1>
-        <p className={styles.sub}>
-          The classic game — now with ranked matchmaking, XP, and global
-          leaderboards. Connect, play, climb.
-        </p>
-        <div className={styles.cta}>
-          {user ? (
+        <p className={ styles.sub }>{ m.home_tagline() }</p>
+        <div className={ styles.cta }>
+          { user ? (
             <Link to="/play" className="btn">
-              Ir Para Um Desafio
+              { m.home_cta_play() }
             </Link>
           ) : (
             <>
               <Link to="/auth/signup" className="btn">
-                Play now
+                { m.home_cta_play_now() }
               </Link>
               <Link to="/auth/login" className="btn ghost">
-                Log in
+                { m.home_cta_login() }
               </Link>
             </>
-          )}
+          ) }
         </div>
-        {player && (
-          <div className={styles.statsBar}>
-            <Stat label="XP" value={player.xp} color="var(--accent)" />
-            <Stat label="Wins" value={player.wins} color="var(--success)" />
-            <Stat label="Losses" value={player.losses} color="var(--error)" />
-            <Stat label="Draws" value={player.draws} color="var(--muted)" />
+        { player && (
+          <div className={ styles.statsBar }>
+            <Stat
+              label={ m.home_stat_xp() }
+              value={ formatNumber(player.xp) }
+              color="var(--accent)"
+            />
+            <Stat
+              label={ m.home_stat_wins() }
+              value={ formatNumber(player.wins) }
+              color="var(--success)"
+            />
+            <Stat
+              label={ m.home_stat_losses() }
+              value={ formatNumber(player.losses) }
+              color="var(--error)"
+            />
+            <Stat
+              label={ m.home_stat_draws() }
+              value={ formatNumber(player.draws) }
+              color="var(--muted)"
+            />
           </div>
-        )}
+        ) }
       </section>
 
-      <section className={styles.ranking}>
-        <div className={styles.rankingHeader}>
-          <h2>Top Players</h2>
+      <section className={ styles.ranking }>
+        <div className={ styles.rankingHeader }>
+          <h2>{ m.home_top_title() }</h2>
           <Link to="/ranking" className={styles.seeAll}>
-            See all →
+            { m.home_top_see_all() }
           </Link>
         </div>
-        <div className={styles.rankList}>
-          {top.map((p, i) => (
-            <div key={p.id} className={styles.rankRow}>
-              <span className={styles.rankPos}>{i + 1}</span>
-              <span className={styles.rankNick}>{p.nickname}</span>
-              <div className={styles.rankMeta}>
-                <span className={styles.rankXp}>{p.xp} xp</span>
-                <span className={styles.rankRecord}>
-                  {p.wins}W · {p.losses}L · {p.draws}D
+        <div className={ styles.rankList }>
+          { top.map((p, i) => (
+            <div key={ p.id } className={ styles.rankRow }>
+              <span className={ styles.rankPos }>{ i + 1 }</span>
+              <span className={ styles.rankNick }>{ p.nickname }</span>
+              <div className={ styles.rankMeta }>
+                <span className={ styles.rankXp }>
+                  { m.xp_lower({ xp: formatNumber(p.xp) }) }
+                </span>
+                <span className={ styles.rankRecord }>
+                  { m.home_top_record({
+                    wins: p.wins,
+                    losses: p.losses,
+                    draws: p.draws,
+                  }) }
                 </span>
               </div>
             </div>
-          ))}
-          {top.length === 0 && (
-            <p className={styles.empty}>No players yet. Be the first!</p>
-          )}
+          )) }
+          { top.length === 0 && (
+            <p className={ styles.empty }>{ m.home_top_empty() }</p>
+          ) }
         </div>
       </section>
 
-      <section className={styles.features}>
+      <section className={ styles.features }>
         <Feature
           icon="⚡"
-          title="Instant matchmaking"
-          desc="Get paired with a random opponent in seconds."
+          title={ m.home_feature_matchmaking_title() }
+          desc={ m.home_feature_matchmaking_desc() }
         />
         <Feature
           icon="🏆"
-          title="XP & ranking"
-          desc="Win games to earn XP and climb the global leaderboard."
+          title={ m.home_feature_ranking_title() }
+          desc={ m.home_feature_ranking_desc() }
         />
         <Feature
           icon="🔒"
-          title="Authenticated play"
-          desc="Every game is tracked — your record is yours forever."
+          title={ m.home_feature_auth_title() }
+          desc={ m.home_feature_auth_desc() }
         />
       </section>
     </div>
@@ -117,15 +138,15 @@ function Stat({
   color,
 }: {
   label: string;
-  value: number;
+  value: string;
   color: string;
 }) {
   return (
-    <div className={styles.stat}>
-      <span className={styles.statVal} style={{ color }}>
-        {value}
+    <div className={ styles.stat }>
+      <span className={ styles.statVal } style={ { color } }>
+        { value }
       </span>
-      <span className={styles.statLabel}>{label}</span>
+      <span className={ styles.statLabel }>{ label }</span>
     </div>
   );
 }
@@ -140,10 +161,10 @@ function Feature({
   desc: string;
 }) {
   return (
-    <div className={styles.feature}>
-      <span className={styles.featureIcon}>{icon}</span>
-      <h3>{title}</h3>
-      <p>{desc}</p>
+    <div className={ styles.feature }>
+      <span className={ styles.featureIcon }>{ icon }</span>
+      <h3>{ title }</h3>
+      <p>{ desc }</p>
     </div>
   );
 }

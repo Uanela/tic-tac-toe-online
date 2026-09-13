@@ -1,0 +1,35 @@
+/* Deliberately not a `.btn`: the navbar's mobile rules hide every `.btn` in the
+   right-hand cluster, and the switcher has to stay reachable there. */
+.switcher {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.option {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.option:hover {
+  color: var(--text);
+}
+
+.active {
+  background: var(--accent);
+  color: #0a0a0f;
+}

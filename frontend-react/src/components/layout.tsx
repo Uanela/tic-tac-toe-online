@@ -6,6 +6,7 @@ import { Navbar } from "./navbar";
 import { InviteModal } from "./invite-modal";
 import { Toast } from "./toast";
 import { useAuth } from "../utils/contexts/auth.context";
+import { m } from "../paraglide/messages.js";
 import type { GameServerState } from '../pages/play/play.page';
 
 interface InviteReceivedData {
@@ -55,16 +56,17 @@ export function Layout({ children }: { children: React.ReactNode; }) {
   });
 
   game.on<InviteDeclinedData>("invite_declined", (data) => {
-    showToast(`${data.byNickname} declined your challenge`);
+    showToast(m.toast_invite_declined({ nickname: data.byNickname }));
   });
 
   game.on<InviteExpiredData>("invite_expired", (data) => {
     setPendingInvite(null);
+    // The server composes this one, so it is not translated on the client.
     showToast(data.message);
   });
 
   game.on("waiting_timeout", () => {
-    showToast("No opponent found. Try again!");
+    showToast(m.toast_no_opponent());
   });
 
   game.on<GameServerState>("game_state", (data) => {

@@ -1,4 +1,6 @@
 import type { GameState } from "../play.page";
+import { formatNumber } from "../../../lib/format";
+import { m } from "../../../paraglide/messages.js";
 import styles from "./scoreboard.module.css";
 
 export function Scoreboard({
@@ -13,7 +15,9 @@ export function Scoreboard({
       >
         <span className={styles.mark}>X</span>
         <span className={styles.name}>{playerX.nickname}</span>
-        <span className={styles.name}>{playerX.xp} xp</span>
+        <span className={styles.name}>
+          {m.xp_lower({ xp: formatNumber(playerX.xp) })}
+        </span>
         {currentTurn === "X" && <span className={styles.turnDot} />}
       </div>
 
@@ -24,7 +28,9 @@ export function Scoreboard({
       >
         <span className={styles.mark}>O</span>
         <span className={styles.name}>{playerO.nickname}</span>
-        <span className={styles.name}>{playerO.xp} xp</span>
+        <span className={styles.name}>
+          {m.xp_lower({ xp: formatNumber(playerO.xp) })}
+        </span>
         {currentTurn === "O" && <span className={styles.turnDot} />}
       </div>
     </div>

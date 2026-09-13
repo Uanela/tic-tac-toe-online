@@ -152,6 +152,10 @@ Templates live in `src/modules/game/utils/email-templates/` and the copy is **Po
   - Listeners are registered during render (not in a `useEffect`), and screen/game state is mirrored into query params (`?gameScreen=`, `?gameState=`, `?inviteId=`) so a hard navigation restores the board. `inviteId` is also what the challenge email link opens, and the page auto-emits `accept_invite` when it sees it.
   - `vite.config.ts` aliases `react`/`react-dom` to the local `node_modules` and excludes `@arkosjs/react-websockets` from `optimizeDeps` — these are required for the arkos WS packages to work, not leftover cruft.
 - Styling is CSS modules next to each component; there is no component library.
+- **i18n is Paraglide JS, `pt` default, `en` second.** Catalogs are `messages/{locale}.json` at the frontend root, flat `snake_case` ids (dotted ids compile to bracket-access exports). Two things about the setup bite if you touch it:
+  - `plugin.inlang.messageFormat.pathPattern` resolves relative to the **parent** of `project.inlang/`, so `./messages/{locale}.json` means `frontend-react/messages/`, not `project.inlang/messages/`. A wrong path is swallowed silently — the compile prints success with zero messages.
+  - `src/paraglide/` is generated and gitignored, and `build` runs `tsc` before `vite`, so the `prebuild` script compiles it first. Its options must be kept in sync with `paraglideVitePlugin` in `vite.config.ts`; they are duplicated in both places.
+  - The locale state lives in `App`, not in a provider component, because Paraglide keeps the locale outside React — a provider re-rendering `{children}` would not re-render non-consumers. `setLocale(..., { reload: false })` is deliberate: a reload would destroy an in-flight game. There is no `url` strategy, so invite links (`/play?inviteId=…`) survive a switch.
 
 ## Gotchas
 
