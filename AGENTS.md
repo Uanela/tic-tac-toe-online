@@ -113,9 +113,19 @@ Two ways a game starts, both funnelling into `startGame()`, which creates the `G
 1. **Queue** — `join_game`.
 2. **Challenge** — `send_invite` (emails the target if offline via `emailService` + `challenge.email.ts`, gated by notification preferences) → `invite_received` → `accept_invite`. The inviter is always `X`, the accepter `O`.
 
-Per-room `setInterval` enforces a 10s turn timer: on expiry the server flips `currentTurn` and re-broadcasts; 30s of total inactivity triggers `cleanupBySocket` for both players.
+**The game is vanishing-marks tic-tac-toe, and it is the only mode.** There is no standard variant left to switch between. A player holds at most `MAX_MARKS` (3) marks at once: placing a fourth removes their **oldest** mark. The board stays 9 cells and three in a row still wins.
 
-On win/draw or disconnect, `finishGame()` writes the `Game.result` and updates both players' `wins`/`losses`/`draws`/`xp` (win 50, draw 15, loss 5 — duplicated as `XP_MAP` in `play.page.tsx`).
+Three rules follow from that, and all three are load-bearing:
+
+- **Resolution order is place → evict → check win**, in `makeMove`. A mark that is about to leave cannot be part of the winning line — the eviction happens first, so a line completed *through* the doomed mark does not win. Reordering these breaks the game in a way that looks like a flaky win.
+- **`checkWinner` never returns a draw.** The cap guarantees at least three empty cells, so a full board is unreachable. `null` means "no winner yet", nothing else. A draw can only come from the clock.
+- **The search bottoms out on depth, not on a terminal position.** `bot.service.ts` uses `SEARCH_DEPTH` plus a heuristic horizon (`evaluate`), because vanishing play has no terminal full board to end a full-depth minimax — it would recurse forever, and if it somehow completed, every move would score 0 and `bestMoveChance` would become a no-op.
+
+Per-room `setInterval` enforces a 10s turn timer: on expiry the server flips `currentTurn` and re-broadcasts. A separate 120s `GAME_TIME_LIMIT_MS` caps the whole game and settles it as a draw — without it a game nobody wins (or nobody plays) never ends, since the 10s tick keeps refreshing `lastUpdate`. Settlement lives in `finishRoom()`, shared by the clock and by `applyMove` so the win path exists once.
+
+The payload carries `doomed: { X, O }` — each side's about-to-be-evicted index, or `null` under three marks. **The server always reports both sides; the client decides what to show.** `play.page.tsx` dims `doomed[me.mark]` only while `me.myTurn`, so the warning appears exactly when the player is about to place their own fourth mark, never during the opponent's turn.
+
+On win/draw or disconnect, `finishGame()` writes the `Game.result` and updates both players' `wins`/`losses`/`draws`/`xp` (win 50, draw 15, loss 5 — duplicated as `XP_MAP` in `play.page.tsx`). Vanishing games are full games: they write the same `Game` rows and the same stat columns as any other, with no separate accounting for the pre-vanishing era.
 
 ### Events the server actually emits
 
