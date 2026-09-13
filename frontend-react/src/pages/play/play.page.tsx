@@ -123,10 +123,26 @@ export default function PlayPage() {
   }
 
   // ── core game state ───────────────────────────────────────────────────────
+  // The query param outlives the room it names: it survives a reload, a stale tab and a
+  // server restart, so it is untrusted input and has to fail back to the join screen
+  // rather than throw. These run during render, and there is no error boundary, so a
+  // throw here blanks the entire app.
+  const [restoredState] = useState<GameState | null>(() => {
+    const raw = searchParams.get("gameState");
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as GameServerState;
+      // A torn-down room leaves no players, and getGameState dereferences them.
+      if (!Array.isArray(parsed?.players) || parsed.players.length < 2) return null;
+      return getGameState(parsed);
+    } catch {
+      return null;
+    }
+  });
   const [screen, setScreen] = useState<Screen>(
-    (searchParams.get("gameScreen") as Screen) || "join"
+    searchParams.get("gameScreen") === "game" && restoredState ? "game" : "join"
   );
-  const [gameState, setGameState] = useState<GameState | null>((searchParams.get("gameState") as Screen) ? getGameState(JSON.parse((searchParams.get("gameState")!)) as GameServerState) : null);
+  const [gameState, setGameState] = useState<GameState | null>(restoredState);
   const [counter, setCounter] = useState(0);
 
   useInterval(
