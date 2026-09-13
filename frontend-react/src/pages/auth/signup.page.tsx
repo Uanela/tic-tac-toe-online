@@ -4,6 +4,11 @@ import { useAuth } from "../../utils/contexts/auth.context";
 import { m } from "../../paraglide/messages.js";
 import { Button } from "../../components/button";
 import { RichText } from "../../components/rich-text";
+import {
+  NICKNAME_MAX_LENGTH,
+  NicknameSchema,
+  normalizeNickname,
+} from "../../lib/nickname";
 import styles from "./auth.module.css";
 
 export default function SignupPage() {
@@ -18,9 +23,18 @@ export default function SignupPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+
+    const parsed = NicknameSchema.safeParse(nickname);
+    if (!parsed.success) {
+      setError(m.auth_nickname_invalid());
+      return;
+    }
+
     setLoading(true);
     try {
-      await signup({ email, password, player: { nickname } });
+      // The parsed value, not the raw one: it is the normalized spelling the
+      // backend stores, so what the form showed is what the player gets.
+      await signup({ email, password, player: { nickname: parsed.data } });
       navigate("/play");
     } catch (err: any) {
       setError(err.message || m.auth_signup_failed());
@@ -43,12 +57,16 @@ export default function SignupPage() {
             <input
               className="input"
               type="text"
-              placeholder="ShadowKnight"
-              maxLength={ 20 }
+              placeholder="shadow_knight"
+              maxLength={ NICKNAME_MAX_LENGTH }
               value={ nickname }
-              onChange={ (e) => setNickname(e.target.value) }
+              onChange={ (e) => setNickname(normalizeNickname(e.target.value)) }
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={ false }
               required
             />
+            <p className={ styles.hint }>{ m.auth_nickname_hint() }</p>
           </div>
 
           <div className={ styles.field }>

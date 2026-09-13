@@ -77,6 +77,8 @@
   "auth_email": "Email",
   "auth_password": "Password",
   "auth_nickname": "Nickname",
+  "auth_nickname_hint": "Lowercase letters, numbers and _ only — no spaces",
+  "auth_nickname_invalid": "Invalid nickname: 3 to 20 characters, lowercase letters, numbers and _ only",
   "auth_login_title": "Welcome back",
   "auth_login_sub": "Log in to resume your streak",
   "auth_login_submit": "Log in",

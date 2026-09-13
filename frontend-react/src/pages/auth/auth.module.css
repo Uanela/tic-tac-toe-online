@@ -50,6 +50,12 @@
   color: var(--muted);
 }
 
+.hint {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 .footer {
   text-align: center;
   font-size: 0.88rem;
