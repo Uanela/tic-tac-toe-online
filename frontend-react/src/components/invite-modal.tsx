@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Swords } from "lucide-react";
 import { m } from "../paraglide/messages.js";
 import { Button } from "./button";
 import { RichText } from "./rich-text";
@@ -32,7 +33,9 @@ export function InviteModal({
   return (
     <div className={styles.overlay}>
       <div className={styles.box}>
-        <div className={styles.emoji}>⚔️</div>
+        <div className={styles.icon}>
+          <Swords size={40} color="var(--x-color)" />
+        </div>
         <div className={styles.title}>{m.invite_title()}</div>
         <div className={styles.sub}>
           <RichText parts={ m.invite_body.parts({ nickname: fromNickname }) } />

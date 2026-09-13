@@ -8,14 +8,17 @@ const SignupSchema = z.object({
     .regex(/[a-z]/, "A palavra-passe deve conter ao menos uma letra minúscula")
     .regex(/[A-Z]/, "A palavra-passe deve conter ao menos uma letra maiúscula"),
   player: z.object({
+    // Lowercased here as well as in the signup form: requests arrive from
+    // anywhere, and a nickname is only ever stored one way.
     nickname: z
       .string()
-      .toLowerCase()
       .trim()
-      .min(3)
+      .toLowerCase()
+      .min(3, "O nickname deve ter no mínimo 3 caracteres")
+      .max(20, "O nickname deve ter no máximo 20 caracteres")
       .regex(
-        /^[a-zA-Z0-9_]+$/,
-        "Nickname deve apenas conter letras, números e underscores (_)"
+        /^[a-z0-9_]+$/,
+        "O nickname deve conter apenas letras minúsculas, números e underscores (_), sem espaços"
       ),
     apiAction: z.literal("create").default("create"),
   }),

@@ -2,8 +2,11 @@ import app from "@/src/app";
 import http from "node:http";
 import { Server } from "socket.io";
 import gateway from "./gateway";
+import startCron from "./utils/start-cron";
 
 await app.build();
+
+startCron();
 
 const server = http.createServer(app);
 

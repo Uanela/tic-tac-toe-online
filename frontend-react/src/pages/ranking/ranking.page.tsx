@@ -1,11 +1,33 @@
 import { useEffect, useState } from "react";
+import { Medal } from "lucide-react";
 import { api } from "../../lib/api";
 import { formatNumber } from "../../lib/format";
 import { m } from "../../paraglide/messages.js";
 import { Button } from "../../components/button";
+import { Tabs } from "../../components/tabs";
+import { ChampionshipBadge } from "../../components/championship-badge";
+import { ChampionshipCountdown } from "../../components/championship-countdown";
+import { useChampionshipWinners } from "../../hooks/use-championship-winners";
+import { BADGE_COLORS } from "../../lib/championship";
+import type { ChampionshipPeriod, Standing } from "../../lib/championship";
 import styles from "./ranking-page.module.css";
 
-interface PlayerRow {
+const LIMIT = 10;
+const MEDAL_RANKS = 3;
+
+type TabId = "weekly" | "all";
+
+interface Row {
+  key: string;
+  playerId: string;
+  nickname: string;
+  xp: number;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
+interface AllTimePlayer {
   id: string;
   nickname: string;
   xp: number;
@@ -14,33 +36,109 @@ interface PlayerRow {
   draws: number;
 }
 
-const LIMIT = 10;
+interface AllTimeResponse {
+  players: AllTimePlayer[];
+  total: number;
+}
+
+interface ChampionshipResponse {
+  players: Standing[];
+  total: number;
+  period: ChampionshipPeriod;
+}
 
 export default function RankingPage() {
-  const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [tab, setTab] = useState<TabId>("weekly");
+  const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
+  const [period, setPeriod] = useState<ChampionshipPeriod | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const totalPages = Math.ceil(total / LIMIT);
+  const badgeRanks = useChampionshipWinners();
+
+  // Read inside the render, not at module scope: the labels follow the locale.
+  const tabs = [
+    { id: "weekly", label: m.ranking_tab_weekly() },
+    { id: "all", label: m.ranking_tab_all() },
+  ];
 
   useEffect(() => {
     setLoading(true);
-    api
-      .get<{ players: PlayerRow[]; total: number; }>(
-        `/players/ranking?page=${page}&limit=${LIMIT}`
-      )
+
+    // The two tabs answer with different rows, so each is flattened to the one
+    // shape the table renders. A player's own id is what the badges are keyed
+    // by, which for the all-time tab is simply the row's id.
+    const request: Promise<{ rows: Row[]; total: number }> =
+      tab === "weekly"
+        ? api
+            .get<ChampionshipResponse>(
+              `/championship/ranking?page=${page}&limit=${LIMIT}`
+            )
+            .then((res) => {
+              setPeriod(res.period);
+
+              return {
+                rows: res.players.map((standing) => ({
+                  key: standing.id,
+                  playerId: standing.playerId,
+                  nickname: standing.nickname,
+                  xp: standing.xp,
+                  wins: standing.wins,
+                  losses: standing.losses,
+                  draws: standing.draws,
+                })),
+                total: res.total,
+              };
+            })
+        : api
+            .get<AllTimeResponse>(`/players/ranking?page=${page}&limit=${LIMIT}`)
+            .then((res) => ({
+              rows: res.players.map((player) => ({
+                key: player.id,
+                playerId: player.id,
+                nickname: player.nickname,
+                xp: player.xp,
+                wins: player.wins,
+                losses: player.losses,
+                draws: player.draws,
+              })),
+              total: res.total,
+            }));
+
+    request
       .then((res) => {
-        setPlayers(res.players);
+        setRows(res.rows);
         setTotal(res.total);
       })
+      .catch(() => {
+        setRows([]);
+        setTotal(0);
+      })
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [tab, page]);
+
+  const changeTab = (id: string) => {
+    setTab(id as TabId);
+    setPage(1);
+  };
 
   return (
     <div className={ styles.page }>
       <div className={ styles.header }>
         <h1>{ m.ranking_title() }</h1>
-        <p>{ m.ranking_competing({ total: formatNumber(total) }) }</p>
+        <p>
+          { tab === "weekly"
+            ? m.championship_competing({ total: formatNumber(total) })
+            : m.ranking_competing({ total: formatNumber(total) }) }
+        </p>
+      </div>
+
+      <div className={ styles.controls }>
+        <Tabs tabs={ tabs } active={ tab } onChange={ changeTab } />
+        { tab === "weekly" && period && (
+          <ChampionshipCountdown endsAt={ period.endedAt } />
+        ) }
       </div>
 
       <div className={ styles.table }>
@@ -56,30 +154,39 @@ export default function RankingPage() {
               <div key={ i } className={ styles.skeleton } />
             )) }
           </div>
+        ) : rows.length === 0 ? (
+          <p className={ styles.empty }>
+            { tab === "weekly" ? m.championship_empty() : m.home_top_empty() }
+          </p>
         ) : (
-          players.map((p, i) => {
+          rows.map((p, i) => {
             const rank = (page - 1) * LIMIT + i + 1;
-            const total_games = p.wins + p.losses + p.draws;
-            const winPct =
-              total_games > 0 ? Math.round((p.wins / total_games) * 100) : 0;
+            const games = p.wins + p.losses + p.draws;
+            const winPct = games > 0 ? Math.round((p.wins / games) * 100) : 0;
+            const badge = badgeRanks[p.playerId];
 
             return (
               <div
-                key={ p.id }
+                key={ p.key }
                 className={ `${styles.row} ${rank <= 3 ? styles[`top${rank}`] : ""}` }
               >
                 <span className={ styles.rank }>
-                  { rank === 1
-                    ? "🥇"
-                    : rank === 2
-                      ? "🥈"
-                      : rank === 3
-                        ? "🥉"
-                        : rank }
+                  { rank <= MEDAL_RANKS ? (
+                    <Medal
+                      size={ 16 }
+                      color={ BADGE_COLORS[rank] }
+                      aria-label={ m.ranking_rank({ rank }) }
+                    />
+                  ) : (
+                    rank
+                  ) }
                 </span>
 
                 <div className={ styles.playerCol }>
-                  <span className={ styles.nick }>{ p.nickname }</span>
+                  <span className={ styles.nickRow }>
+                    <span className={ styles.nick }>{ p.nickname }</span>
+                    { badge && <ChampionshipBadge rank={ badge } /> }
+                  </span>
                   <span className={ styles.xp }>
                     { m.xp_lower({ xp: formatNumber(p.xp) }) }
                   </span>

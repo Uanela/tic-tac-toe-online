@@ -1,29 +1,38 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link } from "../components/link";
+import { Zap, Trophy, Lock } from "lucide-react";
 import { useAuth } from "../utils/contexts/auth.context";
 import { api } from "../lib/api";
 import { formatNumber } from "../lib/format";
 import { m } from "../paraglide/messages.js";
+import { ChampionshipBadge } from "../components/championship-badge";
+import { ChampionshipCountdown } from "../components/championship-countdown";
+import { useChampionshipWinners } from "../hooks/use-championship-winners";
+import type { ChampionshipPeriod, Standing } from "../lib/championship";
 import styles from "./home-page.module.css";
 import OnlinePlayersCount from "./play/components/online-players-count";
 
-interface PlayerRow {
-  id: string;
-  nickname: string;
-  xp: number;
-  wins: number;
-  losses: number;
-  draws: number;
+interface ChampionshipResponse {
+  players: Standing[];
+  total: number;
+  period: ChampionshipPeriod;
 }
 
 export default function HomePage() {
   const { user, player } = useAuth();
-  const [top, setTop] = useState<PlayerRow[]>([]);
+  const [top, setTop] = useState<Standing[]>([]);
+  const [period, setPeriod] = useState<ChampionshipPeriod | null>(null);
+  const badgeRanks = useChampionshipWinners();
 
+  // The front page leads with the week's race rather than the all-time table:
+  // the standing a visitor can still change is the more useful thing to show.
   useEffect(() => {
     api
-      .get<{ players: PlayerRow[]; }>("/players/ranking?page=1&limit=5")
-      .then((res) => setTop(res.players))
+      .get<ChampionshipResponse>("/championship/ranking?page=1&limit=5")
+      .then((res) => {
+        setTop(res.players);
+        setPeriod(res.period);
+      })
       .catch(() => { });
   }, []);
 
@@ -82,15 +91,23 @@ export default function HomePage() {
       <section className={ styles.ranking }>
         <div className={ styles.rankingHeader }>
           <h2>{ m.home_top_title() }</h2>
-          <Link to="/ranking" className={styles.seeAll}>
-            { m.home_top_see_all() }
-          </Link>
+          <div className={ styles.rankingAside }>
+            { period && <ChampionshipCountdown endsAt={ period.endedAt } /> }
+            <Link to="/ranking" className={styles.seeAll}>
+              { m.home_top_see_all() }
+            </Link>
+          </div>
         </div>
         <div className={ styles.rankList }>
           { top.map((p, i) => (
             <div key={ p.id } className={ styles.rankRow }>
               <span className={ styles.rankPos }>{ i + 1 }</span>
-              <span className={ styles.rankNick }>{ p.nickname }</span>
+              <span className={ styles.rankNickRow }>
+                <span className={ styles.rankNick }>{ p.nickname }</span>
+                { badgeRanks[p.playerId] && (
+                  <ChampionshipBadge rank={ badgeRanks[p.playerId] } />
+                ) }
+              </span>
               <div className={ styles.rankMeta }>
                 <span className={ styles.rankXp }>
                   { m.xp_lower({ xp: formatNumber(p.xp) }) }
@@ -106,24 +123,24 @@ export default function HomePage() {
             </div>
           )) }
           { top.length === 0 && (
-            <p className={ styles.empty }>{ m.home_top_empty() }</p>
+            <p className={ styles.empty }>{ m.championship_empty() }</p>
           ) }
         </div>
       </section>
 
       <section className={ styles.features }>
         <Feature
-          icon="⚡"
+          icon={ <Zap size={ 24 } /> }
           title={ m.home_feature_matchmaking_title() }
           desc={ m.home_feature_matchmaking_desc() }
         />
         <Feature
-          icon="🏆"
+          icon={ <Trophy size={ 24 } /> }
           title={ m.home_feature_ranking_title() }
           desc={ m.home_feature_ranking_desc() }
         />
         <Feature
-          icon="🔒"
+          icon={ <Lock size={ 24 } /> }
           title={ m.home_feature_auth_title() }
           desc={ m.home_feature_auth_desc() }
         />
@@ -156,7 +173,7 @@ function Feature({
   title,
   desc,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   desc: string;
 }) {

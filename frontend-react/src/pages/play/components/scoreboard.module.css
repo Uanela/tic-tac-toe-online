@@ -47,6 +47,14 @@
   color: var(--o-color);
 }
 
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .name {
   font-size: 0.8rem;
   font-weight: 600;

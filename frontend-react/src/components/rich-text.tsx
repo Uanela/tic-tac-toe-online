@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "./link";
 import type { MessagePart } from "../paraglide/runtime.js";
 
 type TagPart = Exclude<MessagePart, { type: "text" }>;

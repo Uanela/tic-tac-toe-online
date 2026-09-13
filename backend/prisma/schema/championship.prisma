@@ -1,0 +1,33 @@
+/// One row per player per championship period, written when a game settles.
+/// `startedAt`/`endedAt` carry the period itself so a future switch to daily or
+/// custom periods only adds rows with different bounds and never rewrites these.
+model PlayerChampionshipStats {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  startedAt   DateTime
+  endedAt     DateTime
+  xp          Int      @default(0)
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  draws       Int      @default(0)
+  firstGameAt DateTime
+
+  @@unique([playerId, startedAt])
+  @@index([startedAt, xp])
+}
+
+/// The periods that have been closed out. `notifiedAt` is what keeps the
+/// close-out emails from going twice when a restart lands on the boundary.
+model ChampionshipPeriod {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  startedAt DateTime  @unique
+  endedAt   DateTime
+  notifiedAt DateTime?
+}

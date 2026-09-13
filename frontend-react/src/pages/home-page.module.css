@@ -108,6 +108,11 @@
 .seeAll:hover {
   opacity: 0.75;
 }
+.rankingAside {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
 .rankList {
   display: flex;
   flex-direction: column;
@@ -133,9 +138,18 @@
   color: var(--muted);
   font-weight: 500;
 }
+.rankNickRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
 .rankNick {
   font-weight: 700;
   font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rankMeta {
   display: flex;
@@ -174,7 +188,8 @@
   gap: 10px;
 }
 .featureIcon {
-  font-size: 1.5rem;
+  display: flex;
+  color: var(--accent);
 }
 .feature h3 {
   font-size: 0.95rem;

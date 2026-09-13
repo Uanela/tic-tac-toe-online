@@ -1,10 +1,11 @@
+import type { ReactNode } from "react";
 import { Button } from "../../../components/button";
 import { formatNumber } from "../../../lib/format";
 import { m } from "../../../paraglide/messages.js";
 import styles from "./game-over-overlay.module.css";
 
 interface GameOverOverlayProps {
-  emoji: string;
+  icon: ReactNode;
   title: string;
   sub: string;
   titleColor?: string;
@@ -13,7 +14,7 @@ interface GameOverOverlayProps {
 }
 
 export function GameOverOverlay({
-  emoji,
+  icon,
   title,
   sub,
   titleColor,
@@ -23,7 +24,7 @@ export function GameOverOverlay({
   return (
     <div className={styles.overlay}>
       <div className={styles.box}>
-        <div className={styles.emoji}>{emoji}</div>
+        <div className={styles.icon}>{icon}</div>
         <div
           className={styles.title}
           style={titleColor ? { color: titleColor } : {}}

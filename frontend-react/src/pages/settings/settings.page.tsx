@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../components/link";
 import { useSound } from "../../utils/contexts/sound.context";
 import { m } from "../../paraglide/messages.js";
 import styles from "./settings-page.module.css";

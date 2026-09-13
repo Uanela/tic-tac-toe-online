@@ -11,6 +11,7 @@ import SettingsPage from "./pages/settings/settings.page";
 import NotificationPreferencesPage from "./pages/settings/notification-preferences.page";
 import Providers from "./utils/contexts/providers";
 import { SoundProvider } from "./utils/contexts/sound.context";
+import { BootScreen } from "./components/boot-screen";
 
 export default function App() {
   // Held above the router on purpose: Paraglide keeps the locale outside React, so
@@ -23,23 +24,25 @@ export default function App() {
       <AuthProvider>
         <SoundProvider>
           <Providers>
-            <BrowserRouter>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={ <HomePage /> } />
-                  <Route path="/auth/login" element={ <LoginPage /> } />
-                  <Route path="/auth/signup" element={ <SignupPage /> } />
-                  <Route path="/ranking" element={ <RankingPage /> } />
-                  <Route path="/play" element={ <PlayPage /> } />
-                  <Route path="/settings" element={ <SettingsPage /> } />
-                  <Route
-                    path="/settings/notifications"
-                    element={ <NotificationPreferencesPage /> }
-                  />
-                  <Route path="*" element={ <Navigate to="/" replace /> } />
-                </Routes>
-              </Layout>
-            </BrowserRouter>
+            <BootScreen>
+              <BrowserRouter>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={ <HomePage /> } />
+                    <Route path="/auth/login" element={ <LoginPage /> } />
+                    <Route path="/auth/signup" element={ <SignupPage /> } />
+                    <Route path="/ranking" element={ <RankingPage /> } />
+                    <Route path="/play" element={ <PlayPage /> } />
+                    <Route path="/settings" element={ <SettingsPage /> } />
+                    <Route
+                      path="/settings/notifications"
+                      element={ <NotificationPreferencesPage /> }
+                    />
+                    <Route path="*" element={ <Navigate to="/" replace /> } />
+                  </Routes>
+                </Layout>
+              </BrowserRouter>
+            </BootScreen>
           </Providers>
         </SoundProvider>
       </AuthProvider>

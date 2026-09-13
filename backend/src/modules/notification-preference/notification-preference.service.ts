@@ -22,15 +22,9 @@ export class NotificationPreferenceService extends BaseService<"notification-pre
       | string,
     category: NotificationPreferenceCategory
   ) {
-    let preferences: Pick<NotificationPreference, "category" | "status">[] = [];
-
-    if (typeof preferencesOrUserId === "string") {
-      const user = await userService.findById(
-        preferencesOrUserId,
-        queryOptionsForNotifications
-      );
-      preferences = user?.player?.settings?.notificationPreferences || [];
-    }
+    const preferences = Array.isArray(preferencesOrUserId)
+      ? preferencesOrUserId
+      : await this.preferencesFor(preferencesOrUserId);
 
     if (preferences.every((p) => p.category !== category)) return true;
     const weekDay = new Date().getDay();
@@ -38,6 +32,15 @@ export class NotificationPreferenceService extends BaseService<"notification-pre
     return this.allowedDays[
       preferences.find((p) => p.category === category)?.status || "Always"
     ].includes(weekDay);
+  }
+
+  private async preferencesFor(userId: string) {
+    const user = await userService.findById(
+      userId,
+      queryOptionsForNotifications
+    );
+
+    return user?.player?.settings?.notificationPreferences || [];
   }
 }
 
