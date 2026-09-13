@@ -28,10 +28,14 @@ pnpm-lock.yaml
 # Arkos.js' base uploads directory
 /uploads
 
-# TypeScript cache and declaration files
+# TypeScript cache, declaration files and side-emits. The compiler has no outDir,
+# so a bare `tsc` drops .js next to every .ts and Node would then resolve the stale
+# copy ahead of the source. The real build goes to /.build.
 *.tsbuildinfo
 /src/**/*.js.map
 /src/**/*.d.ts
+/src/**/*.js
+/arkos.config.js
 /types/generated/*
 
 # Logs
