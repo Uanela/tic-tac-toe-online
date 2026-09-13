@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { m } from "../../paraglide/messages.js";
+import { Button } from "../../components/button";
 import { RichText } from "../../components/rich-text";
 import styles from "./auth.module.css";
 
@@ -62,9 +63,9 @@ export default function LoginPage() {
 
           { error && <p className="error-msg">{ error }</p> }
 
-          <button className="btn" type="submit" disabled={ loading }>
+          <Button className="btn" type="submit" disabled={ loading }>
             { loading ? m.auth_login_loading() : m.auth_login_submit() }
-          </button>
+          </Button>
         </form>
 
         <p className={ styles.footer }>

@@ -14,6 +14,7 @@ import { MatchFoundScreen } from "./components/match-found-screen";
 import { MatchClock } from "./components/match-clock";
 import styles from "./play-page.module.css";
 import { Toast } from "../../components/toast";
+import { Button } from "../../components/button";
 import OnlinePlayersCount from "./components/online-players-count";
 import useInterval from "../../hooks/use-interval";
 import { useFetch } from "../../hooks/use-fetch";
@@ -195,7 +196,6 @@ export default function PlayPage() {
   const [cues] = useState(() => new GameCues(restoredState ?? undefined));
 
   const [sentInviteId, setSentInviteId] = useState<string | null>(null);
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
@@ -494,7 +494,7 @@ export default function PlayPage() {
             </div>
           </div>
 
-          <button
+          <Button
             className="btn"
             onClick={handleJoin}
             disabled={
@@ -504,7 +504,7 @@ export default function PlayPage() {
             }
           >
             {joinEmitter.loading ? m.play_join_finding() : m.play_join_find()}
-          </button>
+          </Button>
 
           <div className={styles.divider}>
             <span>{m.play_join_or()}</span>
@@ -518,97 +518,78 @@ export default function PlayPage() {
                 <span />
               </div>
               <p className={styles.hint}>{m.play_join_pending()}</p>
-              <button className="btn ghost" onClick={handleCancelInvite}>
+              <Button className="btn ghost" onClick={handleCancelInvite}>
                 {m.play_join_cancel()}
-              </button>
+              </Button>
             </div>
           ) : (
             <div className={styles.invitePanel}>
-              <button
-                className={`btn ghost ${styles.inviteToggle}`}
-                onClick={() => {
-                  setInviteOpen((o) => !o);
-                  setSearchQuery("");
-                  setSearchResults([]);
-                }}
-              >
-                {inviteOpen
-                  ? m.play_join_close()
-                  : m.play_join_challenge_toggle()}
-              </button>
+              <div className={styles.searchBox}>
+                <input
+                  className="input"
+                  placeholder={m.play_join_search_placeholder()}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searching && <span className={styles.searchSpinner} />}
+              </div>
 
-              {inviteOpen ? (
-                <>
-                  <div className={styles.searchBox}>
-                    <input
-                      className="input"
-                      placeholder={m.play_join_search_placeholder()}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      autoFocus
-                    />
-                    {searching && <span className={styles.searchSpinner} />}
-                  </div>
-
-                  {searchResults.length > 0 && (
-                    <div className={styles.searchResults}>
-                      {searchResults.map((p) => (
-                        <div key={p.userId} className={styles.searchRow}>
-                          <div className={styles.searchInfo}>
-                            <span
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                              className={styles.searchNick}
-                            >
-                              <p
-                                style={{
-                                  width: 8,
-                                  height: 8,
-                                }}
-                                className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
-                              ></p>
-                              {p.nickname}
-                            </span>
-                            <span
-                              style={{ marginLeft: 10 }}
-                              className={styles.searchXp}
-                            >
-                              {m.xp_upper({ xp: formatNumber(p.xp) })}
-                            </span>
-                          </div>
-                          <button
-                            className={`btn ${styles.challengeBtn}`}
-                            onClick={() => handleSendInvite(p.userId)}
-                            disabled={
-                              invitingId === p.userId ||
-                              sendInviteEmitter.loading
-                            }
-                            aria-label={ m.play_join_challenge() }
-                          >
-                            ⚔️
-                          </button>
-                        </div>
-                      ))}
+              {searchResults.length > 0 && (
+                <div className={styles.searchResults}>
+                  {searchResults.map((p) => (
+                    <div key={p.userId} className={styles.searchRow}>
+                      <div className={styles.searchInfo}>
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                          className={styles.searchNick}
+                        >
+                          <p
+                            style={{
+                              width: 8,
+                              height: 8,
+                            }}
+                            className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
+                          ></p>
+                          {p.nickname}
+                        </span>
+                        <span
+                          style={{ marginLeft: 10 }}
+                          className={styles.searchXp}
+                        >
+                          {m.xp_upper({ xp: formatNumber(p.xp) })}
+                        </span>
+                      </div>
+                      <Button
+                        className={`btn ${styles.challengeBtn}`}
+                        onClick={() => handleSendInvite(p.userId)}
+                        disabled={
+                          invitingId === p.userId || sendInviteEmitter.loading
+                        }
+                        aria-label={m.play_join_challenge()}
+                      >
+                        ⚔️
+                      </Button>
                     </div>
-                  )}
+                  ))}
+                </div>
+              )}
 
-                  {searchQuery.trim() &&
-                    !searching &&
-                    searchResults.length === 0 && (
-                      <p className={styles.hint}>{m.play_join_none_found()}</p>
-                    )}
-                </>
-              ) : (
+              {searchQuery.trim() &&
+                !searching &&
+                searchResults.length === 0 && (
+                  <p className={styles.hint}>{m.play_join_none_found()}</p>
+                )}
+
+              {!searchQuery.trim() && (
                 <div>
                   <div
-                    className={styles.header}
                     style={{
                       marginTop: 32,
                       marginBottom: 16,
-                      marginInline: "block",
                       fontWeight: "bold",
                     }}
                   >
@@ -645,17 +626,17 @@ export default function PlayPage() {
                                 {m.xp_upper({ xp: formatNumber(p.xp) })}
                               </span>
                             </div>
-                            <button
+                            <Button
                               className={`btn ${styles.challengeBtn}`}
                               onClick={() => handleSendInvite(p.userId)}
                               disabled={
                                 invitingId === p.userId ||
                                 sendInviteEmitter.loading
                               }
-                              aria-label={ m.play_join_challenge() }
+                              aria-label={m.play_join_challenge()}
                             >
                               ⚔️
-                            </button>
+                            </Button>
                           </div>
                         ),
                     )}
@@ -664,8 +645,6 @@ export default function PlayPage() {
               )}
             </div>
           )}
-
-          <p className={styles.hint}>{m.play_join_test_hint()}</p>
         </div>
       )}
 
@@ -677,9 +656,9 @@ export default function PlayPage() {
             <span />
           </div>
           <p className={styles.hint}>{m.play_join_waiting()}</p>
-          <button className="btn ghost" onClick={handleCancelWait}>
+          <Button className="btn ghost" onClick={handleCancelWait}>
             {m.play_join_cancel()}
-          </button>
+          </Button>
         </div>
       )}
 

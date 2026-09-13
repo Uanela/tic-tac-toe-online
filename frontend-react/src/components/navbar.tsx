@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../utils/contexts/auth.context";
 import { m } from "../paraglide/messages.js";
+import { Button } from "./button";
 import { LocaleSwitcher } from "./locale-switcher";
 import styles from "./navbar.module.css";
 
@@ -65,9 +66,9 @@ export function Navbar() {
                 { nickname }
               </span>
               {/* desktop only */}
-              <button className="btn ghost" onClick={ handleLogout }>
+              <Button className="btn ghost" onClick={ handleLogout }>
                 { m.nav_logout() }
-              </button>
+              </Button>
             </>
           ) : (
             <>
@@ -81,7 +82,7 @@ export function Navbar() {
             </>
           ) }
 
-          <button
+          <Button
             className={ `${styles.hamburger} ${open ? styles.open : ""}` }
             onClick={ () => setOpen((v) => !v) }
             aria-label={ m.nav_menu() }
@@ -89,7 +90,7 @@ export function Navbar() {
             <span />
             <span />
             <span />
-          </button>
+          </Button>
         </div>
       </nav>
 
@@ -123,9 +124,9 @@ export function Navbar() {
           <LocaleSwitcher />
         </div>
         { user ? (
-          <button className={styles.drawerLogout} onClick={ handleLogout }>
+          <Button className={styles.drawerLogout} onClick={ handleLogout }>
             { m.nav_logout() }
-          </button>
+          </Button>
         ) : (
           <>
             <Link

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { m } from "../paraglide/messages.js";
+import { Button } from "./button";
 import { RichText } from "./rich-text";
 import styles from "./invite-modal.module.css";
 
@@ -38,12 +39,12 @@ export function InviteModal({
         </div>
         <div className={styles.timer}>{secondsLeft}s</div>
         <div className={styles.actions}>
-          <button className="btn" onClick={onAccept}>
+          <Button className="btn" onClick={onAccept}>
             {m.invite_accept()}
-          </button>
-          <button className="btn ghost" onClick={onDecline}>
+          </Button>
+          <Button className="btn ghost" onClick={onDecline}>
             {m.invite_decline()}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

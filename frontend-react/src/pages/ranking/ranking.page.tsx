@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
 import { formatNumber } from "../../lib/format";
 import { m } from "../../paraglide/messages.js";
+import { Button } from "../../components/button";
 import styles from "./ranking-page.module.css";
 
 interface PlayerRow {
@@ -111,23 +112,23 @@ export default function RankingPage() {
 
       { totalPages > 1 && (
         <div className={ styles.pagination }>
-          <button
+          <Button
             className="btn ghost"
             onClick={ () => setPage((p) => p - 1) }
             disabled={ page === 1 }
           >
             { m.ranking_prev() }
-          </button>
+          </Button>
           <span className={ styles.pageInfo }>
             { page } / { totalPages }
           </span>
-          <button
+          <Button
             className="btn ghost"
             onClick={ () => setPage((p) => p + 1) }
             disabled={ page === totalPages }
           >
             { m.ranking_next() }
-          </button>
+          </Button>
         </div>
       ) }
     </div>

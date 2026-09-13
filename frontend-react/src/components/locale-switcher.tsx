@@ -1,6 +1,7 @@
 import { m } from "../paraglide/messages.js";
 import { locales, type Locale } from "../paraglide/runtime.js";
 import { useLocale } from "../utils/contexts/locale.context";
+import { Button } from "./button";
 import styles from "./locale-switcher.module.css";
 
 /** Locale codes are their own labels — no translation, so they stay legible. */
@@ -12,7 +13,7 @@ export function LocaleSwitcher() {
   return (
     <div className={styles.switcher} role="group" aria-label={m.locale_switch()}>
       {locales.map((option) => (
-        <button
+        <Button
           key={option}
           type="button"
           className={`${styles.option} ${option === locale ? styles.active : ""}`}
@@ -20,7 +21,7 @@ export function LocaleSwitcher() {
           onClick={() => changeLocale(option)}
         >
           {LABELS[option]}
-        </button>
+        </Button>
       ))}
     </div>
   );
