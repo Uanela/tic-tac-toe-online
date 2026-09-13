@@ -7,8 +7,9 @@ interface BoardProps {
   isMyTurn: boolean;
   onCellClick: (index: number) => void;
   poppedCell: number | null;
-  /** The mark the cap will evict on the next placement — the current player's oldest. */
+  /** The cell the cap evicts on the next placement: the current player's oldest mark. */
   doomedCell: number | null;
+  winningLine: number[] | null;
 }
 
 export function Board({
@@ -17,6 +18,7 @@ export function Board({
   onCellClick,
   poppedCell,
   doomedCell,
+  winningLine,
 }: BoardProps) {
   return (
     <div className={styles.board}>
@@ -29,6 +31,7 @@ export function Board({
             !cell && isMyTurn ? styles.hoverable : "",
             poppedCell === i ? styles.pop : "",
             doomedCell === i ? styles.doomed : "",
+            winningLine?.includes(i) ? styles.winning : "",
           ]
             .filter(Boolean)
             .join(" ")}

@@ -1,0 +1,63 @@
+.clock {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition:
+    color 0.3s,
+    border-color 0.3s,
+    background 0.3s;
+}
+
+.label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.digits {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.amber {
+  border-color: rgba(245, 197, 106, 0.4);
+  background: rgba(245, 197, 106, 0.08);
+}
+
+.amber .digits {
+  color: var(--x-color);
+}
+
+.red {
+  border-color: var(--error);
+  background: rgba(245, 106, 106, 0.1);
+}
+
+.red .digits {
+  color: var(--error);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .red .digits {
+    animation: none;
+  }
+}

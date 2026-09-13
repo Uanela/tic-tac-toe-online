@@ -1,6 +1,8 @@
 import { ArkosGatewayController } from "arkos/websockets";
 import { ArkosSocket } from "arkos/websockets";
 import ticTacToeService, {
+  GAME_TIME_LIMIT_MS,
+  START_DELAY_MS,
   GameRoom,
   GameState,
   Invite,
@@ -23,14 +25,11 @@ const BOT_MOVE_MAX_MS = 5_000;
 const BOT_INVITE_ACCEPT_MS = 1_500;
 const INVITE_TIMEOUT_MS = 120_000; // 2min to accept
 const ROUND_TIME = 10_000;
-const GAME_TIME_LIMIT_MS = 120_000;
 
 export let onlineSockets: { userId: string; socketId: string }[] = [];
 
 class TicTacToeController extends ArkosGatewayController {
-  // ─── helpers ────────────────────────────────────────────────────────────────
-
-  /** Returns the "room_*" room the user is currently in, if any. */
+  /** The "room_*" room the user is currently in, if any. */
   private async activeRoomId(socket: ArkosSocket, userId: string) {
     const rooms = await socket.user(userId).activeRooms();
     return rooms.find((r) => r.startsWith("room_")) ?? null;
@@ -60,7 +59,9 @@ class TicTacToeController extends ArkosGatewayController {
     gameId: string,
     roomId: string,
   ): Promise<GameState | null> {
-    const startedAt = new Date();
+    // Future-dated on purpose: the game clock and the turn timeout both measure from
+    // it, so neither starts running until the client's intro has had its time.
+    const startedAt = new Date(Date.now() + START_DELAY_MS);
 
     const room: GameRoom = {
       id: roomId,
@@ -243,8 +244,6 @@ class TicTacToeController extends ArkosGatewayController {
     return gameState;
   }
 
-  // ─── join_game (matchmaking queue) ──────────────────────────────────────────
-
   joinGame = async (
     socket: ArkosSocket,
     _data: any,
@@ -256,7 +255,6 @@ class TicTacToeController extends ArkosGatewayController {
     if (!player)
       return ack?.({ success: false, error: "Player profile not found." });
 
-    // Guard: already in a game room?
     const existing = await this.activeRoomId(socket, userId);
     if (existing)
       return ack?.({
@@ -311,20 +309,17 @@ class TicTacToeController extends ArkosGatewayController {
       );
       if (!gameState) return;
 
-      // Both sockets join the Socket.IO room
       socket.join(roomId);
       if (playerX.socketId) socket.to(playerX.socketId).socketsJoin(roomId);
 
       ticTacToeService.setWaiting(null);
 
-      // Return game_start payload directly to the joining player via ack
       return ack?.({
         success: true,
         data: gameState,
       });
     }
 
-    // No one waiting — put this player in the queue with a timeout
     const waitingEntry = {
       socketId: socket.id,
       userId,
@@ -416,8 +411,6 @@ class TicTacToeController extends ArkosGatewayController {
     }
   }
 
-  // ─── send_invite ─────────────────────────────────────────────────────────────
-
   sendInvite = async (
     socket: ArkosSocket,
     data: { targetUserId: string },
@@ -432,28 +425,12 @@ class TicTacToeController extends ArkosGatewayController {
     if (!player)
       return ack?.({ success: false, error: "Player profile not found." });
 
-    // Guard: sender already in a game?
-    // if (this.activeRoomId(socket, userId))
-    //   return ack?.({ success: false, error: "You are already in a game." });
-
-    // Guard: target online?
-    // const targetOnline = await socket.user(data.targetUserId).isOnline();
-    // if (!targetOnline)
-    //   ack?.({ success: false, error: "That player is not online." });
-
     const targetUser = await userService.findById(data.targetUserId);
     if (!targetUser)
       return ack?.({
         success: false,
         error: "Não foi possivel encontrar o jogador",
       });
-
-    // Guard: target already in a game?
-    // if (this.activeRoomId(socket, data.targetUserId))
-    //   return ack?.({
-    //     success: false,
-    //     error: "That player is already in a game.",
-    //   });
 
     const targetPlayer = await ticTacToeService.resolvePlayer(
       data.targetUserId,
@@ -464,14 +441,7 @@ class TicTacToeController extends ArkosGatewayController {
         error: "Target player profile not found.",
       });
 
-    // Grab one of the target's socket IDs
     const targetSockets = await socket.user(data.targetUserId).fetchSockets();
-    // if (!targetSockets.length)
-    //   ack?.({
-    //     success: false,
-    //     error: "Target player is not reachable.",
-    //   });
-
     const targetSocketId = targetSockets[0]?.id;
     const targetIsBot = await playerBotService.isBotUser(data.targetUserId);
     const inviteId = `inv_${Date.now()}_${userId}`;
@@ -481,12 +451,10 @@ class TicTacToeController extends ArkosGatewayController {
       if (!inv) return;
       ticTacToeService.deleteInvite(inviteId);
 
-      // Notify sender
       socket.emit("invite_expired", {
         inviteId,
         message: `${targetPlayer.nickname} did not respond in time.`,
       });
-      // Notify target
       socket.to(targetSocketId).emit("invite_expired", {
         inviteId,
         message: `Invite from ${player.nickname} expired.`,
@@ -509,7 +477,6 @@ class TicTacToeController extends ArkosGatewayController {
 
     ticTacToeService.setInvite(inviteId, invite);
 
-    // Notify target
     socket.user(data.targetUserId).emit("invite_received", {
       inviteId,
       fromNickname: player.nickname,
@@ -556,8 +523,6 @@ class TicTacToeController extends ArkosGatewayController {
       }, BOT_INVITE_ACCEPT_MS);
   };
 
-  // ─── accept_invite ────────────────────────────────────────────────────────
-
   acceptInvite = async (
     socket: ArkosSocket,
     data: { inviteId: string },
@@ -572,7 +537,6 @@ class TicTacToeController extends ArkosGatewayController {
         error: "Invite not found or already expired.",
       });
 
-    // Guard: either player already in a game?
     if (await this.activeRoomId(socket, userId))
       return ack?.({ success: false, error: "You are already in a game." });
     if (await this.activeRoomId(socket, invite.fromUserId))
@@ -597,8 +561,6 @@ class TicTacToeController extends ArkosGatewayController {
     });
   };
 
-  // ─── decline_invite ───────────────────────────────────────────────────────
-
   declineInvite = async (
     socket: ArkosSocket,
     data: { inviteId: string },
@@ -613,7 +575,6 @@ class TicTacToeController extends ArkosGatewayController {
     clearTimeout(invite.timer);
     ticTacToeService.deleteInvite(invite.id);
 
-    // Notify sender
     try {
       socket.to(invite.fromSocketId).emit("invite_declined", {
         inviteId: invite.id,
@@ -621,13 +582,11 @@ class TicTacToeController extends ArkosGatewayController {
         message: `${invite.toNickname} declined your invite.`,
       });
     } catch {
-      // Sender may have disconnected — ignore
+      // The sender may have disconnected.
     }
 
     ack?.({ success: true });
   };
-
-  // ─── make_move ────────────────────────────────────────────────────────────
 
   makeMove = async (
     socket: ArkosSocket,
@@ -707,18 +666,14 @@ class TicTacToeController extends ArkosGatewayController {
         message: "Your opponent disconnected. You win by default!",
       });
     } catch {
-      /* ignore */
+      // A socket that died between the lookup and this emit.
     }
 
     ticTacToeService.deleteRoom(room.roomId);
   }
 
   onDisconnect = async (socket: ArkosSocket) => {
-    // await timers.setTimeout(10000);
-
     await this.cleanupBySocket(socket, socket.id);
-
-    // Handle active game disconnect
   };
 }
 

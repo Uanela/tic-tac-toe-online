@@ -33,6 +33,9 @@ export interface GameState {
   lastMove: { index: number; mark: Mark } | null;
   result: Mark | "draw" | null;
   doomed: Record<Mark, number | null>;
+  winningLine: number[] | null;
+  /** Measured here, not by the client, so the two clocks cannot drift apart. */
+  timeLeftMs: number;
 }
 
 export interface GameRoom {
@@ -65,6 +68,15 @@ export interface Invite {
 }
 
 export const MAX_MARKS = 3;
+
+export const GAME_TIME_LIMIT_MS = 120_000;
+
+/**
+ * The client plays its match-found intro over a board that is already live, so
+ * without this grace period the player on move pays for that animation out of
+ * their own turn clock.
+ */
+export const START_DELAY_MS = 5_000;
 
 export const WIN_LINES = [
   [0, 1, 2],
@@ -128,8 +140,8 @@ class TicTacToeService {
     return Array(9).fill(null);
   }
 
-  // The mark cap keeps at least three cells empty, so a full board is unreachable
-  // and a draw can only come from the controller's game clock.
+  // A full board is unreachable under the mark cap, so a draw can only come from the
+  // controller's game clock — nothing here has to look for one.
   checkWinner(board: Board): Mark | null {
     for (const [a, b, c] of WIN_LINES) {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
@@ -224,11 +236,11 @@ class TicTacToeService {
   }
 
   /**
-   * The mark that leaves the board when `mark` places again, or null while it is under the
+   * The cell that leaves the board when `mark` places again, or null while it is under the
    * cap. Oldest goes by default, but a mark that is the missing third of a line the opponent
-   * already holds the other two of is skipped: the eviction ignores where its owner placed,
-   * so removing it would hand over a win they had no way to avoid. If every mark is such a
-   * blocker the oldest goes anyway, and `giftsWin` is the rule the dim must agree with.
+   * already holds the other two of is skipped: evicting it ignores where its owner placed and
+   * would hand over a win they had no way to avoid. If every mark blocks like that the oldest
+   * goes anyway, which is the rule the client's dim has to agree with.
    */
   nextVictim(board: Board, placed: number[], mark: Mark): number | null {
     if (placed.length < MAX_MARKS) return null;
@@ -273,7 +285,22 @@ class TicTacToeService {
         X: this.nextVictim(room.board, room.placed.X, "X"),
         O: this.nextVictim(room.board, room.placed.O, "O"),
       },
+      winningLine: this.winningLine(room),
+      // `startedAt` is future-dated during the intro, so the elapsed half is floored
+      // at zero and the clock reads as full rather than over-full.
+      timeLeftMs:
+        GAME_TIME_LIMIT_MS - Math.max(0, Date.now() - room.startedAt.getTime()),
     };
+  }
+
+  private winningLine(room: GameRoom): number[] | null {
+    if (!room.result || room.result === "draw") return null;
+
+    return (
+      WIN_LINES.find((line) =>
+        line.every((cell) => room.board[cell] === room.result)
+      ) ?? null
+    );
   }
 
   makeMove(roomId: string, index: number | null, player: SocketPlayer) {
@@ -291,8 +318,8 @@ class TicTacToeService {
     if (room.board[index] !== null)
       throw new BadRequestError("Invalid cell index.");
 
-    // Resolved against the board as the player sees it, before their own mark lands, so the
-    // cell that leaves is the one `doomed` was pointing at a moment earlier.
+    // Resolved before their own mark lands, so the cell that leaves is the one `doomed`
+    // was pointing at a moment earlier.
     const victim = this.nextVictim(room.board, room.placed[player.mark], player.mark);
 
     room.board[index] = player.mark;
@@ -314,7 +341,6 @@ class TicTacToeService {
   }
 
   cancelWaitingQueueBySocketId(socketId: string) {
-    // Cancel waiting queue slot
     const waiting = ticTacToeService.getWaiting();
     if (waiting?.socketId === socketId) {
       ticTacToeService.clearWaitingTimers();
@@ -323,7 +349,6 @@ class TicTacToeService {
   }
 
   cancelInviteByScoket(socketId: string) {
-    // Cancel any pending invites involving this socket
     const invite = ticTacToeService.findInviteBySocket(socketId);
     if (invite) {
       clearTimeout(invite.timer);

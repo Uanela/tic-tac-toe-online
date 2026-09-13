@@ -1,0 +1,143 @@
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 16px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.header p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-family: var(--font-mono);
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 24px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.loadError {
+  color: var(--error);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 18px 0;
+}
+
+.rowLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.select {
+  flex: none;
+  min-width: 170px;
+  padding: 9px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.select:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.select option {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+}
+
+.saveState {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.saveSaved {
+  color: var(--success);
+}
+
+.saveError {
+  color: var(--error);
+}
+
+.back {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.back:hover {
+  color: var(--accent);
+}
+
+.gate {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.gate h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.gate p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-family: var(--font-mono);
+}
+
+.gateCta {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
