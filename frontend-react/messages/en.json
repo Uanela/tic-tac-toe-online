@@ -1,5 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav_home": "Home",
   "nav_ranking": "Ranking",
   "nav_play": "Play",
   "nav_logout": "Logout",
@@ -26,7 +27,7 @@
   "home_stat_wins": "Wins",
   "home_stat_losses": "Losses",
   "home_stat_draws": "Draws",
-  "home_top_title": "Top Players",
+  "home_top_title": "This Week's Championship",
   "home_top_see_all": "See all →",
   "home_top_empty": "No players yet. Be the first!",
   "home_top_record": "{wins}W · {losses}L · {draws}D",

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../utils/contexts/auth.context";
 import { m } from "../paraglide/messages.js";
 import { Button } from "./button";
+import { Link } from "./link";
 import { LocaleSwitcher } from "./locale-switcher";
 import styles from "./navbar.module.css";
 
@@ -32,6 +33,9 @@ export function Navbar() {
 
         {/* desktop links */}
         <div className={styles.links}>
+          <Link to="/" className={styles.link}>
+            { m.nav_home() }
+          </Link>
           <Link to="/ranking" className={styles.link}>
             { m.nav_ranking() }
           </Link>
@@ -96,6 +100,13 @@ export function Navbar() {
 
       {/* mobile drawer */}
       <div className={ `${styles.drawer} ${open ? styles.open : ""}` }>
+        <Link
+          to="/"
+          className={styles.drawerLink}
+          onClick={ () => setOpen(false) }
+        >
+          { m.nav_home() }
+        </Link>
         <Link
           to="/ranking"
           className={styles.drawerLink}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../../components/link";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { api } from "../../lib/api";
 import { m } from "../../paraglide/messages.js";

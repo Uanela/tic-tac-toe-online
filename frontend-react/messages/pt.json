@@ -1,5 +1,6 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
+  "nav_home": "Página Inicial",
   "nav_ranking": "Ranking",
   "nav_play": "Jogar",
   "nav_logout": "Sair",
@@ -26,7 +27,7 @@
   "home_stat_wins": "Vitórias",
   "home_stat_losses": "Derrotas",
   "home_stat_draws": "Empates",
-  "home_top_title": "Melhores Jogadores",
+  "home_top_title": "Campeonato da Semana",
   "home_top_see_all": "Ver todos →",
   "home_top_empty": "Nenhum jogador ainda. Seja o primeiro!",
   "home_top_record": "{wins}V · {losses}D · {draws}E",

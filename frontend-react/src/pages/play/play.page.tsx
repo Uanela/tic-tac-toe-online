@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Swords, Handshake, Trophy, Frown, DoorOpen } from "lucide-react";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../../utils/contexts/auth.context";
@@ -16,6 +16,7 @@ import { MatchClock } from "./components/match-clock";
 import styles from "./play-page.module.css";
 import { Toast } from "../../components/toast";
 import { Button } from "../../components/button";
+import { Link } from "../../components/link";
 import OnlinePlayersCount from "./components/online-players-count";
 import useInterval from "../../hooks/use-interval";
 import { useFetch } from "../../hooks/use-fetch";
