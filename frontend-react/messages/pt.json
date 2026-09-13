@@ -163,5 +163,7 @@
 	"notifications_status_once": "Uma vez por semana",
 	"notifications_status_twice": "Duas vezes por semana",
 	"notifications_status_thrice": "Três vezes por semana",
-	"notifications_status_always": "Todos os dias"
+	"notifications_status_always": "Todos os dias",
+	"nav_conn_on": "On",
+	"nav_conn_off": "Off"
 }
