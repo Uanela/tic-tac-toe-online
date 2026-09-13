@@ -251,6 +251,11 @@
   background: var(--surface2);
 }
 
+.challengeBtn {
+  padding: 12px 18px;
+  font-size: 1rem;
+}
+
 .searchInfo {
   display: flex;
   flex-direction: column;

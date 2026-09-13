@@ -94,19 +94,6 @@ interface PendingEnding {
   delayMs: number;
 }
 
-function statusLabel(status: string): string {
-  switch (status) {
-    case "connected":
-      return m.play_status_connected();
-    case "connecting":
-      return m.play_status_connecting();
-    case "reconnecting":
-      return m.play_status_reconnecting();
-    default:
-      return m.play_status_disconnected();
-  }
-}
-
 export default function PlayPage() {
   const { user, player, refreshPlayer } = useAuth();
   const game = useGateway("/tic-tac-toe");
@@ -493,17 +480,6 @@ export default function PlayPage() {
 
   return (
     <div className={styles.page}>
-      {screen !== "game" && (
-        <div className={styles.statusBar}>
-          <span
-            className={`${styles.dot} ${game.status === "connected" ? styles.connected : ""}`}
-          />
-          <span className={styles.statusText}>
-            {statusLabel(game.status)}
-          </span>
-        </div>
-      )}
-
       {screen !== "game" && <OnlinePlayersCount />}
 
       {screen === "join" && (
@@ -604,16 +580,15 @@ export default function PlayPage() {
                             </span>
                           </div>
                           <button
-                            className="btn"
+                            className={`btn ${styles.challengeBtn}`}
                             onClick={() => handleSendInvite(p.userId)}
                             disabled={
                               invitingId === p.userId ||
                               sendInviteEmitter.loading
                             }
+                            aria-label={ m.play_join_challenge() }
                           >
-                            {invitingId === p.userId
-                              ? m.play_join_sending()
-                              : m.play_join_challenge()}
+                            ⚔️
                           </button>
                         </div>
                       ))}
@@ -671,16 +646,15 @@ export default function PlayPage() {
                               </span>
                             </div>
                             <button
-                              className="btn"
+                              className={`btn ${styles.challengeBtn}`}
                               onClick={() => handleSendInvite(p.userId)}
                               disabled={
                                 invitingId === p.userId ||
                                 sendInviteEmitter.loading
                               }
+                              aria-label={ m.play_join_challenge() }
                             >
-                              {invitingId === p.userId
-                                ? m.play_join_sending()
-                                : m.play_join_challenge()}
+                              ⚔️
                             </button>
                           </div>
                         ),
