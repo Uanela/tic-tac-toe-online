@@ -493,14 +493,16 @@ export default function PlayPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.statusBar}>
-        <span
-          className={`${styles.dot} ${game.status === "connected" ? styles.connected : ""}`}
-        />
-        <span className={styles.statusText}>
-          {statusLabel(game.status)}
-        </span>{" "}
-      </div>
+      {screen !== "game" && (
+        <div className={styles.statusBar}>
+          <span
+            className={`${styles.dot} ${game.status === "connected" ? styles.connected : ""}`}
+          />
+          <span className={styles.statusText}>
+            {statusLabel(game.status)}
+          </span>
+        </div>
+      )}
 
       {screen !== "game" && <OnlinePlayersCount />}
 

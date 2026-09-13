@@ -280,3 +280,14 @@
   width: 100%;
   max-width: 340px;
 }
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 16px;
+    gap: 12px;
+  }
+
+  .screen {
+    gap: 16px;
+  }
+}
