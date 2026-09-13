@@ -6,7 +6,11 @@ Guidance for AI coding agents working in this repository. Applies to any agent o
 
 These are requirements, not preferences.
 
-**Comments.** Write code that explains itself and leave it uncommented. Do not add a comment that restates the line beneath it, do not narrate your reasoning in the source, and do not leave commented-out code or `TODO`s behind — delete dead code instead. The exception is an existing convention: `tic-tac-toe.controller.ts` uses `// ─── section ───` dividers, so match that where it already appears. A comment earns its place only when it records something the code cannot express — a non-obvious constraint, a workaround for a specific bug, or why an odd-looking line is correct.
+**Comments.** Write code that explains itself and leave it uncommented. This is the single most-violated rule in this repo, so read it twice.
+
+No divider or banner comments. Ever. Not `// ── section ──`, not `// ===== Foo =====`, not `// --- helpers ---`, not a rule of dashes at all. A file's structure should be visible from its contents, and a banner that names a section is a comment that restates the code beneath it. There is no existing convention here that overrides this — if you find dividers in a file, they are debt, and removing them is in scope.
+
+Beyond that: no comment that restates the line beneath it, no narration of your reasoning or of what you are about to do, no commented-out code, no `TODO`s — delete dead code instead. A comment earns its place only when it records something the code cannot express: a non-obvious constraint, a workaround for a specific bug, or why an odd-looking line is correct. Even then, one line usually says it. A paragraph almost never does, and a JSDoc block that needs a blank line in the middle is an essay the code should have made unnecessary. When you finish a change, reread your own comments and delete the ones that survive only because you wrote them on the way past.
 
 **Simplicity.** Reach for the smallest thing that works. No speculative abstraction, no parameter nothing varies, no helper that only wraps a single call, no guard against a case that cannot happen. If a function needs a paragraph to justify its shape, the shape is wrong.
 

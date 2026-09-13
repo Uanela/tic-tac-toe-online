@@ -6,6 +6,7 @@ import { Navbar } from "./navbar";
 import { InviteModal } from "./invite-modal";
 import { Toast } from "./toast";
 import { useAuth } from "../utils/contexts/auth.context";
+import { useSound } from "../utils/contexts/sound.context";
 import { m } from "../paraglide/messages.js";
 import type { GameServerState } from '../pages/play/play.page';
 
@@ -28,6 +29,7 @@ export function Layout({ children }: { children: React.ReactNode; }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const game = useGateway("/tic-tac-toe");
+  const { play } = useSound();
 
   const [pendingInvite, setPendingInvite] = useState<InviteReceivedData | null>(
     null
@@ -39,7 +41,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
     setTimeout(() => setToast(msg), 10);
   };
 
-  // ── keep socket alive for the entire session ──────────────────────────────
   useEffect(() => {
     if (!user) {
       return;
@@ -53,6 +54,7 @@ export function Layout({ children }: { children: React.ReactNode; }) {
 
   game.on<InviteReceivedData>("invite_received", (data) => {
     setPendingInvite(data);
+    play("dimmed");
   });
 
   game.on<InviteDeclinedData>("invite_declined", (data) => {

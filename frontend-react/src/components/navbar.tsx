@@ -35,6 +35,9 @@ export function Navbar() {
               { m.nav_play() }
             </Link>
           ) }
+          <Link to="/settings" className={styles.link}>
+            { m.nav_settings() }
+          </Link>
         </div>
 
         <div className={styles.right}>
@@ -98,6 +101,13 @@ export function Navbar() {
             { m.nav_play() }
           </Link>
         ) }
+        <Link
+          to="/settings"
+          className={styles.drawerLink}
+          onClick={ () => setOpen(false) }
+        >
+          { m.nav_settings() }
+        </Link>
         { user ? (
           <button className={styles.drawerLogout} onClick={ handleLogout }>
             { m.nav_logout() }

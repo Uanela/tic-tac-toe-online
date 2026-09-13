@@ -27,8 +27,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   const json = await res.json();
-  // The API answers in whatever language its own validation chose, so its message
-  // is shown as-is; this is only the fallback for a body that carries none.
+  // The API localises its own validation messages, so `json.message` wins; `m.api_request_failed()` is only the fallback.
   if (!res.ok) throw new Error(json?.message || m.api_request_failed());
   return json;
 }

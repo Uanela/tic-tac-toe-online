@@ -18,6 +18,12 @@ class AuthController {
     req.body = {
       ...req.body,
       role: "Player",
+      player: {
+        ...req.body.player,
+        // Preferences hang off this row and nothing a Player may call creates
+        // one, so it is born with the account.
+        settings: { create: {} },
+      },
     };
 
     next();

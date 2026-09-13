@@ -163,7 +163,6 @@
   margin-top: 8px;
 }
 
-/* ── divider ── */
 .divider {
   display: flex;
   align-items: center;
@@ -185,7 +184,6 @@
   background: var(--border);
 }
 
-/* ── invite panel ── */
 .invitePanel {
   display: flex;
   flex-direction: column;
@@ -274,7 +272,6 @@
   color: var(--accent);
 }
 
-/* ── invite pending (after sending) ── */
 .invitePending {
   display: flex;
   flex-direction: column;

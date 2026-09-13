@@ -22,7 +22,6 @@ export default function SignupPage() {
       await signup({ email, password, player: { nickname } });
       navigate("/play");
     } catch (err: any) {
-      // Server-facing: the API's own message is shown verbatim when it has one.
       setError(err.message || m.auth_signup_failed());
     } finally {
       setLoading(false);

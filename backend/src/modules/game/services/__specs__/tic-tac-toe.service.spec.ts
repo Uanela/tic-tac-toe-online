@@ -54,8 +54,7 @@ test("a player keeps three marks without losing any", () => {
 });
 
 test("placing a fourth mark evicts the oldest one", () => {
-  // O sits on 3, 5 and 8, which completes no line with any of X's marks, so none of X's
-  // three is a blocker and the plain oldest-goes rule stands.
+  // O on 3, 5 and 8 completes no line with X's marks, so nothing blocks and the oldest leaves.
   const game = room("room_evict", [...ticTacToeService.emptyBoard()], { X: [], O: [] }, "X");
   ticTacToeService.setRoom(game.roomId, game);
 
@@ -75,8 +74,7 @@ test("placing a fourth mark evicts the oldest one", () => {
 });
 
 test("the oldest mark is skipped when it is the third of a line the opponent holds", () => {
-  // O holds 4 and 8, so X's 0 in the same diagonal is the one cell O needs. Evicting it
-  // would empty that cell and hand O 0-4-8 on the spot, so 1 goes instead.
+  // O holds 4 and 8, so evicting X's 0 would hand O 0-4-8; 1 goes instead.
   const game = room("room_skip", [...ticTacToeService.emptyBoard()], { X: [], O: [] }, "X");
   ticTacToeService.setRoom(game.roomId, game);
 
@@ -93,14 +91,12 @@ test("the oldest mark is skipped when it is the third of a line the opponent hol
   assert.equal(live.board[1], null, "the next oldest went instead");
   assert.equal(live.board[2], "X", "the new mark stays");
   assert.deepEqual(live.placed.X, [0, 6, 2]);
-  // The skip is symmetric: X now holds 0+6 and 2+6, so O's 3 and 4 block X lines too and
-  // O's own oldest eligible mark is 8.
+  // Symmetric: O's 3 and 4 now block X too, so O's own oldest eligible mark is 8.
   assert.equal(state.doomed.O, 8);
 });
 
 test("a blocker is evicted anyway when every mark is one", () => {
-  // O holds 0, 2 and 4, which makes each of X's marks the third of a line O already owns
-  // the other two of. The skip runs out of candidates and the oldest leaves regardless.
+  // Every X mark is the third of a line O already owns, so the skip runs out and the oldest leaves.
   const cells: Cell[] = [...ticTacToeService.emptyBoard()];
   cells[1] = "X";
   cells[6] = "X";
@@ -121,8 +117,7 @@ test("a blocker is evicted anyway when every mark is one", () => {
 });
 
 test("a line completed through the doomed mark does not win", () => {
-  // X holds 0, 1 and 4 with only O on 3, 5 and 7, so nothing is blocked and 0 is doomed:
-  // playing 2 completes 0-1-2 and then evicts 0, breaking the very line it just made.
+  // 0 is doomed: playing 2 completes 0-1-2, then evicts 0 and breaks the line it just made.
   const cells: Cell[] = [...ticTacToeService.emptyBoard()];
   cells[0] = "X";
   cells[1] = "X";
