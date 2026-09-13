@@ -55,6 +55,24 @@
   "ranking_win_pct": "{pct}% win",
   "ranking_prev": "← Prev",
   "ranking_next": "Next →",
+  "ranking_tab_all": "All Time",
+  "ranking_tab_weekly": "Weekly",
+  "ranking_rank": "Rank {rank}",
+  "championship_competing": [
+    {
+      "declarations": ["input total", "local totalPlural = total: plural"],
+      "selectors": ["totalPlural"],
+      "match": {
+        "totalPlural=one": "{total} player this week",
+        "totalPlural=other": "{total} players this week"
+      }
+    }
+  ],
+  "championship_empty": "Nobody has played this week yet.",
+  "championship_ends_in": "Ends in",
+  "championship_countdown_dh": "{days}d {hours}h",
+  "championship_countdown_hms": "{hours}h {minutes}m {seconds}s",
+  "championship_badge": "Top {rank} last week",
   "auth_email": "Email",
   "auth_password": "Password",
   "auth_nickname": "Nickname",

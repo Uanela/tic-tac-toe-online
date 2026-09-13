@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Swords, Handshake, Trophy, Frown, DoorOpen } from "lucide-react";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { useSound } from "../../utils/contexts/sound.context";
@@ -571,7 +572,7 @@ export default function PlayPage() {
                         }
                         aria-label={m.play_join_challenge()}
                       >
-                        ⚔️
+                        <Swords size={16} />
                       </Button>
                     </div>
                   ))}
@@ -635,7 +636,7 @@ export default function PlayPage() {
                               }
                               aria-label={m.play_join_challenge()}
                             >
-                              ⚔️
+                              <Swords size={16} />
                             </Button>
                           </div>
                         ),
@@ -706,14 +707,14 @@ function endingFor(overlay: Overlay) {
   switch (overlay.kind) {
     case "draw":
       return {
-        emoji: "🤝",
+        icon: <Handshake size={ 48 } color="var(--accent)" />,
         title: m.play_overlay_draw_title(),
         sub: m.play_overlay_draw_sub(),
         xpGained: XP_MAP.draw,
       };
     case "win":
       return {
-        emoji: "🏆",
+        icon: <Trophy size={ 48 } color="var(--x-color)" />,
         title: m.play_overlay_win_title(),
         sub: m.play_overlay_win_sub({ nickname: overlay.nickname }),
         titleColor: "var(--x-color)",
@@ -721,7 +722,7 @@ function endingFor(overlay: Overlay) {
       };
     case "lose":
       return {
-        emoji: "😤",
+        icon: <Frown size={ 48 } color="var(--error)" />,
         title: m.play_overlay_lose_title(),
         sub: m.play_overlay_lose_sub({ nickname: overlay.nickname }),
         titleColor: "var(--error)",
@@ -729,7 +730,7 @@ function endingFor(overlay: Overlay) {
       };
     case "left":
       return {
-        emoji: "🚪",
+        icon: <DoorOpen size={ 48 } color="var(--muted)" />,
         title: m.play_overlay_left_title(),
         // The server composes this one, so it is not translated on the client.
         sub: overlay.message,

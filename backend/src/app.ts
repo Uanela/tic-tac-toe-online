@@ -1,6 +1,5 @@
 import arkos from "arkos";
 import router from "@/src/router";
-import "./utils/start-cron";
 
 const app = arkos();
 

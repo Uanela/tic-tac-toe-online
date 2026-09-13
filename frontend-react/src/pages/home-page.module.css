@@ -174,7 +174,8 @@
   gap: 10px;
 }
 .featureIcon {
-  font-size: 1.5rem;
+  display: flex;
+  color: var(--accent);
 }
 .feature h3 {
   font-size: 0.95rem;

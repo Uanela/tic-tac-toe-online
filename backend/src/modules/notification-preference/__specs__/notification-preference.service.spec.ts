@@ -6,86 +6,106 @@ import {
 } from "@prisma/client";
 import notificationPreferenceService from "../notification-preference.service";
 
+const onDay = async (weekDay: number, run: () => Promise<boolean>) => {
+  const OriginalDate = global.Date;
+
+  (global as any).Date = class extends OriginalDate {
+    getDay() {
+      return weekDay;
+    }
+  };
+
+  try {
+    return await run();
+  } finally {
+    (global as any).Date = OriginalDate;
+  }
+};
+
 describe("NotificationPreferenceService", () => {
-  it("should return true if no preference exists for the category", () => {
-    const result = notificationPreferenceService.canNotify(
+  it("should return true if no preference exists for the category", async () => {
+    const result = await notificationPreferenceService.canNotify(
       [],
       NotificationPreferenceCategory.MorningDailyRemainder
     );
     assert.strictEqual(result, true);
   });
 
-  it('should return false for "Never" status', () => {
+  it('should return false for "Never" status', async () => {
     const prefs = [
       {
         category: NotificationPreferenceCategory.MorningDailyRemainder,
         status: NotificationPreferenceStatus.Never,
       },
     ];
-    const result = notificationPreferenceService.canNotify(
+    const result = await notificationPreferenceService.canNotify(
       prefs,
       NotificationPreferenceCategory.MorningDailyRemainder
     );
     assert.strictEqual(result, false);
   });
 
-  it('should return true for "Always" status regardless of day', () => {
+  it("should only apply a preference to the category it names", async () => {
+    const prefs = [
+      {
+        category: NotificationPreferenceCategory.MorningDailyRemainder,
+        status: NotificationPreferenceStatus.Never,
+      },
+    ];
+    const result = await notificationPreferenceService.canNotify(
+      prefs,
+      NotificationPreferenceCategory.Annoucements
+    );
+    assert.strictEqual(result, true);
+  });
+
+  it('should return true for "Always" status regardless of day', async () => {
     const prefs = [
       {
         category: NotificationPreferenceCategory.MorningDailyRemainder,
         status: NotificationPreferenceStatus.Always,
       },
     ];
-    const result = notificationPreferenceService.canNotify(
+    const result = await notificationPreferenceService.canNotify(
       prefs,
       NotificationPreferenceCategory.MorningDailyRemainder
     );
     assert.strictEqual(result, true);
   });
 
-  it('should handle "Once" (Wednesday/3) correctly', () => {
-    const originalDate = global.Date;
-    (global as any).Date = class extends Date {
-      getDay() {
-        return 3;
-      }
-    };
-
+  it('should handle "Once" (Wednesday/3) correctly', async () => {
     const prefs = [
       {
         category: NotificationPreferenceCategory.MorningDailyRemainder,
         status: NotificationPreferenceStatus.Once,
       },
     ];
-    const result = notificationPreferenceService.canNotify(
-      prefs,
-      NotificationPreferenceCategory.MorningDailyRemainder
+
+    const result = await onDay(3, () =>
+      notificationPreferenceService.canNotify(
+        prefs,
+        NotificationPreferenceCategory.MorningDailyRemainder
+      )
     );
 
     assert.strictEqual(result, true);
-    (global as any).Date = originalDate;
   });
 
-  it("should return false when day does not match status schedule", () => {
-    const originalDate = global.Date;
-    (global as any).Date = class extends Date {
-      getDay() {
-        return 1;
-      }
-    };
-
+  it("should return false when day does not match status schedule", async () => {
     const prefs = [
       {
         category: NotificationPreferenceCategory.MorningDailyRemainder,
         status: NotificationPreferenceStatus.Twice,
       },
     ]; // Days 2, 5
-    const result = notificationPreferenceService.canNotify(
-      prefs,
-      NotificationPreferenceCategory.MorningDailyRemainder
+
+    const result = await onDay(1, () =>
+      notificationPreferenceService.canNotify(
+        prefs,
+        NotificationPreferenceCategory.MorningDailyRemainder
+      )
     );
 
     assert.strictEqual(result, false);
-    (global as any).Date = originalDate;
   });
 });

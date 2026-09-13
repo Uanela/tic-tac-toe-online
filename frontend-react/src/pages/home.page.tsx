@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Zap, Trophy, Lock } from "lucide-react";
 import { useAuth } from "../utils/contexts/auth.context";
 import { api } from "../lib/api";
 import { formatNumber } from "../lib/format";
@@ -113,17 +114,17 @@ export default function HomePage() {
 
       <section className={ styles.features }>
         <Feature
-          icon="⚡"
+          icon={ <Zap size={ 24 } /> }
           title={ m.home_feature_matchmaking_title() }
           desc={ m.home_feature_matchmaking_desc() }
         />
         <Feature
-          icon="🏆"
+          icon={ <Trophy size={ 24 } /> }
           title={ m.home_feature_ranking_title() }
           desc={ m.home_feature_ranking_desc() }
         />
         <Feature
-          icon="🔒"
+          icon={ <Lock size={ 24 } /> }
           title={ m.home_feature_auth_title() }
           desc={ m.home_feature_auth_desc() }
         />
@@ -156,7 +157,7 @@ function Feature({
   title,
   desc,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   desc: string;
 }) {

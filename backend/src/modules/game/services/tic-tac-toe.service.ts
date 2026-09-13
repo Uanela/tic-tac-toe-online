@@ -3,7 +3,8 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "arkos/error-handler";
-import playerService from "../../../modules/player/player.service";
+import playerService, { GameOutcome } from "../../../modules/player/player.service";
+import championshipService from "../../../modules/championship/championship.service";
 import gameService from "../game.service";
 import { ArkosSocket } from "arkos/websockets";
 
@@ -222,17 +223,22 @@ class TicTacToeService {
   ) {
     await gameService.finishGame(gameId, result);
 
+    const outcomes: { playerId: string; result: GameOutcome }[] = [];
+
     if (result === "Draw") {
-      await Promise.all([
-        winnerPlayerId && playerService.recordResult(winnerPlayerId, "draw"),
-        loserPlayerId && playerService.recordResult(loserPlayerId, "draw"),
-      ]);
+      if (winnerPlayerId) outcomes.push({ playerId: winnerPlayerId, result: "draw" });
+      if (loserPlayerId) outcomes.push({ playerId: loserPlayerId, result: "draw" });
     } else if (winnerPlayerId && loserPlayerId) {
-      await Promise.all([
-        playerService.recordResult(winnerPlayerId, "win"),
-        playerService.recordResult(loserPlayerId, "loss"),
-      ]);
+      outcomes.push({ playerId: winnerPlayerId, result: "win" });
+      outcomes.push({ playerId: loserPlayerId, result: "loss" });
     }
+
+    await Promise.all([
+      ...outcomes.map(({ playerId, result }) =>
+        playerService.recordResult(playerId, result)
+      ),
+      championshipService.recordGame(outcomes),
+    ]);
   }
 
   /**
