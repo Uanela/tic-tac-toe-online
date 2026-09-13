@@ -10,6 +10,7 @@ import { ArkosSocket } from "arkos/websockets";
 export type Mark = "X" | "O";
 export type Cell = Mark | null;
 export type Board = Cell[];
+export type MarkOrder = Record<Mark, number[]>;
 
 export interface SocketPlayer {
   socketId?: string;
@@ -31,6 +32,7 @@ export interface GameState {
   lastUpdate: Date;
   lastMove: { index: number; mark: Mark } | null;
   result: Mark | "draw" | null;
+  doomed: Record<Mark, number | null>;
 }
 
 export interface GameRoom {
@@ -39,11 +41,13 @@ export interface GameRoom {
   gameId: string;
   players: [SocketPlayer, SocketPlayer];
   board: Board;
+  placed: MarkOrder;
   currentTurn: Mark;
   status: "playing" | "finished" | "starting";
   result: Mark | "draw" | null;
   lastMove: { index: number; mark: Mark } | null;
   lastUpdate: Date;
+  startedAt: Date;
 }
 
 export interface Invite {
@@ -59,6 +63,8 @@ export interface Invite {
   expiresAt: number;
   timer: NodeJS.Timeout;
 }
+
+export const MAX_MARKS = 3;
 
 export const WIN_LINES = [
   [0, 1, 2],
@@ -122,13 +128,14 @@ class TicTacToeService {
     return Array(9).fill(null);
   }
 
-  checkWinner(board: Board): Mark | "draw" | null {
+  // The mark cap keeps at least three cells empty, so a full board is unreachable
+  // and a draw can only come from the controller's game clock.
+  checkWinner(board: Board): Mark | null {
     for (const [a, b, c] of WIN_LINES) {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
         return board[a] as Mark;
       }
     }
-    if (board.every((cell) => cell !== null)) return "draw";
     return null;
   }
 
@@ -216,6 +223,11 @@ class TicTacToeService {
     }
   }
 
+  private doomedIndex(room: GameRoom, mark: Mark): number | null {
+    const placed = room.placed[mark];
+    return placed.length >= MAX_MARKS ? placed[0] : null;
+  }
+
   getRoomGameState(roomId: string): GameState {
     const room = this.getRoom(roomId);
     if (!room) throw new NotFoundError();
@@ -236,6 +248,10 @@ class TicTacToeService {
       lastUpdate: room.lastUpdate || new Date(),
       lastMove: room.lastMove || null,
       result: room.result,
+      doomed: {
+        X: this.doomedIndex(room, "X"),
+        O: this.doomedIndex(room, "O"),
+      },
     };
   }
 
@@ -255,6 +271,11 @@ class TicTacToeService {
       throw new BadRequestError("Invalid cell index.");
 
     room.board[index] = player.mark;
+    room.placed[player.mark].push(index);
+
+    const placed = room.placed[player.mark];
+    if (placed.length > MAX_MARKS) room.board[placed.shift()!] = null;
+
     room.currentTurn = player.mark === "X" ? "O" : "X";
 
     ticTacToeService.updateRoom(room.roomId, {

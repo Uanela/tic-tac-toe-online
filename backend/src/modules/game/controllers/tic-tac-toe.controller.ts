@@ -23,6 +23,7 @@ const BOT_MOVE_MAX_MS = 5_000;
 const BOT_INVITE_ACCEPT_MS = 1_500;
 const INVITE_TIMEOUT_MS = 120_000; // 2min to accept
 const ROUND_TIME = 10_000;
+const GAME_TIME_LIMIT_MS = 120_000;
 
 export let onlineSockets: { userId: string; socketId: string }[] = [];
 
@@ -59,7 +60,7 @@ class TicTacToeController extends ArkosGatewayController {
     gameId: string,
     roomId: string,
   ): Promise<GameState | null> {
-    const lastUpdate = new Date();
+    const startedAt = new Date();
 
     const room: GameRoom = {
       id: roomId,
@@ -67,13 +68,15 @@ class TicTacToeController extends ArkosGatewayController {
       gameId,
       players: [playerX, playerO],
       board: ticTacToeService.emptyBoard(),
+      placed: { X: [], O: [] },
       currentTurn: ["X", "O"][
         Math.floor(Math.random() * 2)
       ] as GameRoom["currentTurn"],
       status: "playing",
-      lastUpdate,
+      lastUpdate: startedAt,
       lastMove: null,
       result: null,
+      startedAt,
     };
 
     ticTacToeService.setRoom(roomId, room);
@@ -84,61 +87,36 @@ class TicTacToeController extends ArkosGatewayController {
     const gameState = this.emitGameState(socket, roomId);
     this.scheduleBotTurn(socket, room);
 
-    const interval = setInterval(() => {
-      let currentState: GameState | null = null;
-      try {
-        currentState = ticTacToeService.getRoomGameState(roomId);
-      } catch {
-        // this.cleanupBySocket(socket, playerX.socketId);
-        // this.cleanupBySocket(socket, playerO.socketId);
-        return clearInterval(interval);
-      }
+    const interval = setInterval(async () => {
+      const live = ticTacToeService.getRoom(roomId);
+      if (!live || live.status === "finished") return clearInterval(interval);
 
-      if (!currentState) {
-        // this.cleanupBySocket(socket, playerX.socketId);
-        // this.cleanupBySocket(socket, playerO.socketId);
-        return clearInterval(interval);
-      }
-      const diff = new Date().getTime() - currentState?.lastUpdate.getTime();
-
-      if (currentState.status === "finished" || diff >= 30_000) {
+      if (Date.now() - live.startedAt.getTime() >= GAME_TIME_LIMIT_MS) {
         clearInterval(interval);
-        if (diff >= 30_000) {
-          this.cleanupBySocket(socket, playerX.socketId ?? socket.id);
-          this.cleanupBySocket(socket, playerO.socketId ?? socket.id);
-        }
+        await this.finishRoom(socket, live, "draw");
         return;
       }
 
-      if (diff >= ROUND_TIME) {
-        ticTacToeService.updateRoom(roomId, {
-          lastUpdate: new Date(),
-          currentTurn: currentState?.currentTurn === "X" ? "O" : "X",
-        });
-        this.emitGameState(socket, roomId);
+      if (Date.now() - live.lastUpdate.getTime() < ROUND_TIME) return;
 
-        const live = ticTacToeService.getRoom(roomId);
-        if (live) this.scheduleBotTurn(socket, live);
-      }
+      ticTacToeService.updateRoom(roomId, {
+        lastUpdate: new Date(),
+        currentTurn: live.currentTurn === "X" ? "O" : "X",
+      });
+      this.emitGameState(socket, roomId);
+
+      const next = ticTacToeService.getRoom(roomId);
+      if (next) this.scheduleBotTurn(socket, next);
     }, ROUND_TIME);
 
     return gameState;
   }
 
-  private async applyMove(
+  private async finishRoom(
     socket: ArkosSocket,
     room: GameRoom,
-    player: SocketPlayer,
-    index: number,
+    result: Mark | "draw",
   ) {
-    ticTacToeService.makeMove(room.roomId, index, player);
-
-    this.emitGameState(socket, room.roomId);
-    ticTacToeService.updateRoom(room.roomId);
-
-    const result = ticTacToeService.checkWinner(room.board);
-    if (!result) return this.scheduleBotTurn(socket, room);
-
     room.status = "finished";
 
     const winnerPlayer = room.players.find((p) => p.mark === result);
@@ -173,6 +151,23 @@ class TicTacToeController extends ArkosGatewayController {
     ticTacToeService.deleteRoom(room.roomId);
   }
 
+  private async applyMove(
+    socket: ArkosSocket,
+    room: GameRoom,
+    player: SocketPlayer,
+    index: number,
+  ) {
+    ticTacToeService.makeMove(room.roomId, index, player);
+
+    this.emitGameState(socket, room.roomId);
+    ticTacToeService.updateRoom(room.roomId);
+
+    const result = ticTacToeService.checkWinner(room.board);
+    if (!result) return this.scheduleBotTurn(socket, room);
+
+    await this.finishRoom(socket, room, result);
+  }
+
   private scheduleBotTurn(socket: ArkosSocket, room: GameRoom) {
     const current = room.players.find((p) => p.mark === room.currentTurn);
     if (!current?.isBot) return;
@@ -187,7 +182,7 @@ class TicTacToeController extends ArkosGatewayController {
       const bot = live.players.find((p) => p.mark === live.currentTurn);
       if (!bot?.isBot || bot.playerId !== current.playerId) return;
 
-      const index = botService.chooseMove(live.board, bot.mark);
+      const index = botService.chooseMove(live.board, bot.mark, live.placed);
       if (index < 0) return;
 
       try {

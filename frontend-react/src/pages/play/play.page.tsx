@@ -28,7 +28,11 @@ export interface GameState {
   winner: PlayerOnGame | null;
   loser: PlayerOnGame | null;
   status: "playing" | "finished" | "starting";
+  /** Optional: states restored from a pre-vanishing gameState query param carry no doomed. */
+  doomed?: Doomed;
 }
+
+type Doomed = Record<Mark, number | null>;
 
 export interface GameServerState {
   roomId: string;
@@ -41,6 +45,8 @@ export interface GameServerState {
   lastMove: { index: number; mark: Mark; } | null;
   result: Mark | null | "draw";
   counter: number;
+  /** Marks the cap will evict on each side's next placement, or null under three marks. */
+  doomed?: Doomed;
 }
 
 interface PlayerOnGame extends Player {
@@ -105,6 +111,14 @@ export default function PlayPage() {
   );
 
   const [poppedCell, setPoppedCell] = useState<number | null>(null);
+
+  // The cap evicts my oldest mark once I place a fourth, so the warning is only shown while
+  // I am the one about to place: nothing of mine is at risk during the opponent's turn.
+  const doomedCell =
+    gameState?.me.myTurn && gameState.doomed
+      ? gameState.doomed[gameState.me.mark] ?? null
+      : null;
+
   const [overlay, setOverlay] = useState<{
     emoji: string;
     title: string;
@@ -601,6 +615,7 @@ export default function PlayPage() {
             isMyTurn={ !!gameState?.me.myTurn }
             onCellClick={ handleCellClick }
             poppedCell={ poppedCell }
+            doomedCell={ doomedCell }
           />
         </div>
       ) }
