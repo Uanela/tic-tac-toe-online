@@ -21,7 +21,6 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/play");
     } catch (err: any) {
-      // Server-facing: the API's own message is shown verbatim when it has one.
       setError(err.message || m.auth_login_failed());
     } finally {
       setLoading(false);

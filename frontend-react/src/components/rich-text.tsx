@@ -4,14 +4,7 @@ import type { MessagePart } from "../paraglide/runtime.js";
 
 type TagPart = Exclude<MessagePart, { type: "text" }>;
 
-/**
- * Renders the inline markup of a translated message, so a sentence keeps its
- * emphasis and its links wherever the target language happens to put them,
- * rather than being glued together from fragments that only fit one word order.
- *
- * `{#a}` becomes a router `<Link>`, not an `<a>`, so following a translated
- * link is still a client-side navigation.
- */
+/** Renders a translated message's markup in place, so word order survives translation; `{#a}` becomes a router `<Link>`, not an `<a>`, to keep navigation client-side. */
 export function RichText({ parts }: { parts: MessagePart[] }) {
   const root: ReactNode[] = [];
   const stack: ReactNode[][] = [];

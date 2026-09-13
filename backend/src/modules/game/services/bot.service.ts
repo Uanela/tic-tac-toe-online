@@ -63,8 +63,7 @@ class BotService {
     index: number,
     mark: Mark
   ): [Board, MarkOrder] {
-    // Same rule the live game applies, resolved from the same pre-move board. Reading it off
-    // the service keeps one definition of which mark leaves.
+    // Mirrors the live rule via the service, so there is one definition of which mark leaves.
     const victim = ticTacToeService.nextVictim(board, placed[mark], mark);
 
     const next = [...board];

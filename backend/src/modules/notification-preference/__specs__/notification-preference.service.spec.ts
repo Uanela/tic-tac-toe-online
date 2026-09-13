@@ -4,7 +4,7 @@ import {
   NotificationPreferenceStatus,
   NotificationPreferenceCategory,
 } from "@prisma/client";
-import notificationPreferenceService from "../notification-preference.service"; // Update path
+import notificationPreferenceService from "../notification-preference.service";
 
 describe("NotificationPreferenceService", () => {
   it("should return true if no preference exists for the category", () => {
@@ -44,7 +44,6 @@ describe("NotificationPreferenceService", () => {
   });
 
   it('should handle "Once" (Wednesday/3) correctly', () => {
-    // Mocking date: 2026-06-10 is a Wednesday (day 3)
     const originalDate = global.Date;
     (global as any).Date = class extends Date {
       getDay() {
@@ -68,7 +67,6 @@ describe("NotificationPreferenceService", () => {
   });
 
   it("should return false when day does not match status schedule", () => {
-    // Mocking date: 2026-06-08 is a Monday (day 1)
     const originalDate = global.Date;
     (global as any).Date = class extends Date {
       getDay() {
