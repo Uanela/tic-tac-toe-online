@@ -4,7 +4,7 @@ import { m } from "../paraglide/messages.js";
 import styles from "./boot-screen.module.css";
 
 /** How long the screen holds before it is allowed to lift. */
-const MINIMUM_MS = 3000;
+const MINIMUM_MS = 1500;
 /** Where the bar waits while the app is still working behind the screen. */
 const HELD_PERCENT = 95;
 /** Matches the CSS transition, so the node leaves once the fade has finished. */
