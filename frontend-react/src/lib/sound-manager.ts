@@ -40,7 +40,7 @@ const STORAGE_KEY = "sound-settings";
 const DEFAULTS: SoundSettings = { master: 1, music: 1, sfx: 1, muted: false };
 
 /** Hard cap, not a default: the bed runs hot, so the user's 100% lands at 0.6 native. */
-const MUSIC_GAIN = 0.6;
+const MUSIC_GAIN = 0.5;
 
 const TRACKS: Record<TrackName, TrackDef> = {
   bgMusic: {
@@ -152,7 +152,7 @@ class SoundManager {
   /** The loop covers the whole app, so this is asserted once by the provider. */
   startMusic = () => {
     this.musicWanted = true;
-    this.resumeMusic();
+    this.resumeMusic(true);
   };
 
   /** The loop already runs app-wide; the slider previews itself. This only covers it never having been waved in. */
@@ -222,8 +222,9 @@ class SoundManager {
     this.lastPlayed.clear();
   };
 
-  private resumeMusic() {
-    if (!this.unlocked || this.tabHidden || !this.musicWanted) return;
+  private resumeMusic(musicWanted: boolean = false) {
+    if (!this.unlocked || this.tabHidden || !(this.musicWanted || musicWanted))
+      return;
 
     const howl = this.howl("bgMusic");
     howl.volume(this.volumeFor("bgMusic"));

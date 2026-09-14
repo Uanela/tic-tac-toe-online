@@ -27,30 +27,36 @@ interface SoundContextValue extends SoundSettings {
 const SoundContext = createContext<SoundContextValue | null>(null);
 
 /** Owns the audio lifecycle; playback itself lives in `soundManager`. */
-export function SoundProvider({ children }: { children: ReactNode; }) {
+export function SoundProvider({ children }: { children: ReactNode }) {
   const settings = useSyncExternalStore(
     soundManager.subscribe,
     soundManager.getSettings,
-    soundManager.getSettings
+    soundManager.getSettings,
   );
 
   useEffect(() => {
-    const onGesture = () => soundManager.unlock();
+    const onGesture = () => {
+      soundManager.unlock();
+      soundManager.startMusic();
+    };
+
     const onVisibility = () => soundManager.setTabHidden(document.hidden);
 
     document.addEventListener("pointerdown", onGesture);
     document.addEventListener("keydown", onGesture);
+    document.addEventListener("touchstart", onGesture);
+
     document.addEventListener("visibilitychange", onVisibility);
 
     soundManager.preload();
     soundManager.startMusic();
-    // A StrictMode remount leaves fresh Howls behind, so re-assert what the manager
-    // already wanted: a hidden tab stays paused, a visible one resumes.
+
     soundManager.setTabHidden(document.hidden);
 
     return () => {
       document.removeEventListener("pointerdown", onGesture);
       document.removeEventListener("keydown", onGesture);
+      document.removeEventListener("touchstart", onGesture);
       document.removeEventListener("visibilitychange", onVisibility);
       soundManager.dispose();
     };
@@ -73,10 +79,12 @@ export function SoundProvider({ children }: { children: ReactNode; }) {
       stopLoop: soundManager.stopLoop,
       durationMs: soundManager.durationMs,
     }),
-    [settings]
+    [settings],
   );
 
-  return <SoundContext.Provider value={value}>{children}</SoundContext.Provider>;
+  return (
+    <SoundContext.Provider value={value}>{children}</SoundContext.Provider>
+  );
 }
 
 export function useSound() {
@@ -84,3 +92,4 @@ export function useSound() {
   if (!value) throw new Error("useSound must be used inside <SoundProvider>");
   return value;
 }
+
