@@ -4,6 +4,7 @@ import { useAuth } from "../../utils/contexts/auth.context";
 import { m } from "../../paraglide/messages.js";
 import { Button } from "../../components/button";
 import { RichText } from "../../components/rich-text";
+import { Link } from "../../components/link";
 import styles from "./auth.module.css";
 
 export default function LoginPage() {
@@ -59,6 +60,9 @@ export default function LoginPage() {
               onChange={ (e) => setPassword(e.target.value) }
               required
             />
+            <p className={ styles.forgot }>
+              <Link to="/auth/forgot-password">{ m.auth_forgot_link() }</Link>
+            </p>
           </div>
 
           { error && <p className="error-msg">{ error }</p> }

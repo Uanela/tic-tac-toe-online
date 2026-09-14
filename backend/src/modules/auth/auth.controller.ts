@@ -4,8 +4,29 @@ import { ArkosPrismaInput } from "arkos/prisma";
 import { Prisma } from "@prisma/client";
 import { emailService } from "arkos/services";
 import { welcomeEmail } from "../game/utils/email-templates/welcome.email";
+import authService from "./auth.service";
 
 class AuthController {
+  async forgotPassword(req: ArkosRequest, res: ArkosResponse) {
+    await authService.requestPasswordReset(req.body.email);
+
+    res.status(200).json({
+      status: "success",
+      message: "Código de recuperação enviado.",
+    });
+  }
+
+  async resetPassword(req: ArkosRequest, res: ArkosResponse) {
+    const { email, otp, newPassword } = req.body;
+
+    await authService.resetPassword(email, otp, newPassword);
+
+    res.status(200).json({
+      status: "success",
+      message: "Palavra-passe alterada com sucesso.",
+    });
+  }
+
   async beforeSignup(
     req: ArkosRequest<
       any,
