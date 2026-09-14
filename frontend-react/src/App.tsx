@@ -5,6 +5,7 @@ import { Layout } from "./components/layout";
 import HomePage from "./pages/home.page";
 import LoginPage from "./pages/auth/login.page";
 import SignupPage from "./pages/auth/signup.page";
+import ForgotPasswordPage from "./pages/auth/forgot-password.page";
 import RankingPage from "./pages/ranking/ranking.page";
 import PlayPage from "./pages/play/play.page";
 import SettingsPage from "./pages/settings/settings.page";
@@ -31,6 +32,10 @@ export default function App() {
                     <Route path="/" element={ <HomePage /> } />
                     <Route path="/auth/login" element={ <LoginPage /> } />
                     <Route path="/auth/signup" element={ <SignupPage /> } />
+                    <Route
+                      path="/auth/forgot-password"
+                      element={ <ForgotPasswordPage /> }
+                    />
                     <Route path="/ranking" element={ <RankingPage /> } />
                     <Route path="/play" element={ <PlayPage /> } />
                     <Route path="/settings" element={ <SettingsPage /> } />

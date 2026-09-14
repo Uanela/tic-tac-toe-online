@@ -70,3 +70,37 @@
 .footer a:hover {
   text-decoration: underline;
 }
+
+.forgot {
+  text-align: right;
+  font-size: 0.82rem;
+}
+
+.forgot a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.forgot a:hover {
+  text-decoration: underline;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
