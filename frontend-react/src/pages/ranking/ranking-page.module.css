@@ -33,19 +33,31 @@
   text-transform: uppercase;
   color: var(--muted);
 }
+/* A button, so the resets a div never needed are spelled out: a whole row opens the
+   player's card, and the grid above is what keeps its columns lined up with the head. */
 .row {
   display: grid;
   grid-template-columns: 40px 1fr auto;
   gap: 8px;
   align-items: center;
+  width: 100%;
   padding: 12px 16px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: background 0.15s;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
-.row:hover {
+.row:hover,
+.row:focus-visible {
   background: var(--surface2);
+  outline: none;
+}
+.row:focus-visible {
+  border-color: var(--accent);
 }
 .top1 {
   border-color: #f5c56a44;

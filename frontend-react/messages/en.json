@@ -170,6 +170,13 @@
   "notifications_status_thrice": "Three times a week",
   "notifications_status_always": "Every day",
   "nav_conn_on": "On",
-  "nav_conn_off": "Off"
+  "nav_conn_off": "Off",
+  "player_modal_title": "Player details",
+  "player_modal_close": "Close",
+  "player_modal_error": "Could not load this player.",
+  "player_modal_since": "Member since {date}",
+  "player_modal_recent": "Recent matches",
+  "player_modal_no_matches": "No matches played yet.",
+  "player_modal_vs": "vs"
 }
 

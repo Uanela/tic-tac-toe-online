@@ -7,6 +7,7 @@ import { Button } from "../../components/button";
 import { Tabs } from "../../components/tabs";
 import { ChampionshipBadge } from "../../components/championship-badge";
 import { ChampionshipCountdown } from "../../components/championship-countdown";
+import { PlayerModal } from "../../components/player-modal";
 import { useChampionshipWinners } from "../../hooks/use-championship-winners";
 import { BADGE_COLORS } from "../../lib/championship";
 import type { ChampionshipPeriod, Standing } from "../../lib/championship";
@@ -54,6 +55,7 @@ export default function RankingPage() {
   const [period, setPeriod] = useState<ChampionshipPeriod | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [openId, setOpenId] = useState<string | null>(null);
   const totalPages = Math.ceil(total / LIMIT);
   const badgeRanks = useChampionshipWinners();
 
@@ -166,9 +168,12 @@ export default function RankingPage() {
             const badge = badgeRanks[p.playerId];
 
             return (
-              <div
+              <button
                 key={ p.key }
+                type="button"
                 className={ `${styles.row} ${rank <= 3 ? styles[`top${rank}`] : ""}` }
+                onClick={ () => setOpenId(p.playerId) }
+                title={ m.player_modal_title() }
               >
                 <span className={ styles.rank }>
                   { rank <= MEDAL_RANKS ? (
@@ -211,7 +216,7 @@ export default function RankingPage() {
                     { m.ranking_win_pct({ pct: winPct }) }
                   </span>
                 </div>
-              </div>
+              </button>
             );
           })
         ) }
@@ -237,6 +242,15 @@ export default function RankingPage() {
             { m.ranking_next() }
           </Button>
         </div>
+      ) }
+
+      { openId && (
+        <PlayerModal
+          key={ openId }
+          playerId={ openId }
+          badgeRank={ badgeRanks[openId] }
+          onClose={ () => setOpenId(null) }
+        />
       ) }
     </div>
   );
