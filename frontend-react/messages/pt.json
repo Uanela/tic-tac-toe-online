@@ -170,6 +170,13 @@
   "notifications_status_thrice": "Três vezes por semana",
   "notifications_status_always": "Todos os dias",
   "nav_conn_on": "On",
-  "nav_conn_off": "Off"
+  "nav_conn_off": "Off",
+  "player_modal_title": "Detalhes do jogador",
+  "player_modal_close": "Fechar",
+  "player_modal_error": "Não foi possível carregar este jogador.",
+  "player_modal_since": "Membro desde {date}",
+  "player_modal_recent": "Partidas recentes",
+  "player_modal_no_matches": "Ainda não jogou nenhuma partida.",
+  "player_modal_vs": "vs"
 }
 

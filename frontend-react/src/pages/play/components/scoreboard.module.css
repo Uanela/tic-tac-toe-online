@@ -7,6 +7,7 @@
   margin: 0 auto;
 }
 
+/* A button, so the resets that a div never needed are spelled out here. */
 .card {
   flex: 1;
   display: flex;
@@ -19,6 +20,15 @@
   border-radius: var(--radius-sm);
   position: relative;
   transition: all 0.2s ease;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.card:hover,
+.card:focus-visible {
+  background: var(--surface2);
+  outline: none;
 }
 
 .card.active {

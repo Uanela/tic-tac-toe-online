@@ -16,6 +16,7 @@ import { MatchClock } from "./components/match-clock";
 import styles from "./play-page.module.css";
 import { Toast } from "../../components/toast";
 import { Button } from "../../components/button";
+import { PlayerModal } from "../../components/player-modal";
 import { Link } from "../../components/link";
 import OnlinePlayersCount from "./components/online-players-count";
 import useInterval from "../../hooks/use-interval";
@@ -202,6 +203,7 @@ export default function PlayPage() {
   const [searchResults, setSearchResults] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
   const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const joinEmitter = game.useEmit<{}>("join_game", {
     ack: true,
@@ -539,43 +541,14 @@ export default function PlayPage() {
               {searchResults.length > 0 && (
                 <div className={styles.searchResults}>
                   {searchResults.map((p) => (
-                    <div key={p.userId} className={styles.searchRow}>
-                      <div className={styles.searchInfo}>
-                        <span
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                          className={styles.searchNick}
-                        >
-                          <p
-                            style={{
-                              width: 8,
-                              height: 8,
-                            }}
-                            className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
-                          ></p>
-                          {p.nickname}
-                        </span>
-                        <span
-                          style={{ marginLeft: 10 }}
-                          className={styles.searchXp}
-                        >
-                          {m.xp_upper({ xp: formatNumber(p.xp) })}
-                        </span>
-                      </div>
-                      <Button
-                        className={`btn ${styles.challengeBtn}`}
-                        onClick={() => handleSendInvite(p.userId)}
-                        disabled={
-                          invitingId === p.userId || sendInviteEmitter.loading
-                        }
-                        aria-label={m.play_join_challenge()}
-                      >
-                        <Swords size={16} />
-                      </Button>
-                    </div>
+                    <PlayerRow
+                      key={p.userId}
+                      player={p}
+                      inviting={invitingId === p.userId}
+                      sending={sendInviteEmitter.loading}
+                      onOpen={() => setOpenId(p.id)}
+                      onChallenge={() => handleSendInvite(p.userId)}
+                    />
                   ))}
                 </div>
               )}
@@ -602,44 +575,14 @@ export default function PlayPage() {
                     {players?.map(
                       (p: PlayerOnGame) =>
                         p.id !== player.id && (
-                          <div key={p.userId} className={styles.searchRow}>
-                            <div className={styles.searchInfo}>
-                              <span
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                }}
-                                className={styles.searchNick}
-                              >
-                                <p
-                                  style={{
-                                    width: 8,
-                                    height: 8,
-                                  }}
-                                  className={`${styles.dot} ${p.isOnline ? styles.connected : ""}`}
-                                ></p>
-                                {p.nickname}
-                              </span>
-                              <span
-                                style={{ marginLeft: 10 }}
-                                className={styles.searchXp}
-                              >
-                                {m.xp_upper({ xp: formatNumber(p.xp) })}
-                              </span>
-                            </div>
-                            <Button
-                              className={`btn ${styles.challengeBtn}`}
-                              onClick={() => handleSendInvite(p.userId)}
-                              disabled={
-                                invitingId === p.userId ||
-                                sendInviteEmitter.loading
-                              }
-                              aria-label={m.play_join_challenge()}
-                            >
-                              <Swords size={16} />
-                            </Button>
-                          </div>
+                          <PlayerRow
+                            key={p.userId}
+                            player={p}
+                            inviting={invitingId === p.userId}
+                            sending={sendInviteEmitter.loading}
+                            onOpen={() => setOpenId(p.id)}
+                            onChallenge={() => handleSendInvite(p.userId)}
+                          />
                         ),
                     )}
                   </div>
@@ -700,6 +643,76 @@ export default function PlayPage() {
         />
       )}
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+
+      {openId && (
+        // Keyed by the player, so opening a second one starts on page 1 rather than
+        // inheriting the page the last card was left on.
+        <PlayerModal
+          key={openId}
+          playerId={openId}
+          onClose={() => setOpenId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * One row of either player list — the search results and the online list are the
+ * same row, so a change to what a row offers lands on both.
+ */
+function PlayerRow({
+  player,
+  inviting,
+  sending,
+  onOpen,
+  onChallenge,
+}: {
+  player: Player;
+  inviting: boolean;
+  sending: boolean;
+  onOpen: () => void;
+  onChallenge: () => void;
+}) {
+  return (
+    <div className={styles.searchRow}>
+      {/* A sibling of the challenge button, never its parent: a button cannot nest one. */}
+      <button
+        type="button"
+        className={styles.searchInfo}
+        onClick={onOpen}
+        title={m.player_modal_title()}
+      >
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          className={styles.searchNick}
+        >
+          <p
+            style={{
+              width: 8,
+              height: 8,
+            }}
+            className={`${styles.dot} ${player.isOnline ? styles.connected : ""}`}
+          ></p>
+          {player.nickname}
+        </span>
+        <span style={{ marginLeft: 10 }} className={styles.searchXp}>
+          {m.xp_upper({ xp: formatNumber(player.xp) })}
+        </span>
+      </button>
+
+      <Button
+        className={`btn ${styles.challengeBtn}`}
+        onClick={onChallenge}
+        disabled={inviting || sending}
+        aria-label={m.play_join_challenge()}
+      >
+        <Swords size={16} />
+      </Button>
     </div>
   );
 }

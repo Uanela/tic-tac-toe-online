@@ -86,4 +86,16 @@ playerRouter.get(
   playerController.getRanking
 );
 
+// Public on purpose: the ranking it is opened from is readable signed out, so the
+// card behind a row has to be too. Two segments deep, so it cannot be swallowed by
+// whatever `/:id` the generated CRUD routes mount.
+playerRouter.get(
+  {
+    path: "/:id/profile",
+    authentication: false,
+    validation: { params: z.object({ id: z.string() }) },
+  },
+  playerController.getProfile
+);
+
 export default playerRouter;

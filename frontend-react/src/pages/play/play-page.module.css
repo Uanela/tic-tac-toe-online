@@ -256,11 +256,28 @@
   font-size: 1rem;
 }
 
+/* A button, so the resets a div never needed are spelled out: tapping the name and
+   XP opens the player's card, while the challenge button beside it stays its own. */
 .searchInfo {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
   min-width: 0;
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.searchInfo:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 .searchNick {

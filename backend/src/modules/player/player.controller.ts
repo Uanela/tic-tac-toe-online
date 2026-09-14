@@ -1,7 +1,7 @@
 import { BaseController } from "arkos/controllers";
 import { ArkosRequest, ArkosResponse } from "arkos";
 import { AppError } from "arkos/error-handler";
-import playerService from "./player.service";
+import playerService, { MATCH_HISTORY } from "./player.service";
 
 class PlayerController extends BaseController {
   async getMyPlayer(req: ArkosRequest, res: ArkosResponse) {
@@ -19,6 +19,19 @@ class PlayerController extends BaseController {
     );
     const result = await playerService.findRanking(page, limit);
     res.status(200).json({ status: "success", ...result });
+  }
+
+  async getProfile(req: ArkosRequest, res: ArkosResponse) {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(
+      MATCH_HISTORY.max,
+      Math.max(1, parseInt(req.query.limit as string) || MATCH_HISTORY.default)
+    );
+    const profile = await playerService.findProfile(req.params.id, page, limit);
+    if (!profile)
+      throw new AppError("Player profile not found", 404, "NotFound");
+
+    res.status(200).json({ status: "success", ...profile });
   }
 }
 

@@ -7,6 +7,7 @@ import { formatNumber } from "../lib/format";
 import { m } from "../paraglide/messages.js";
 import { ChampionshipBadge } from "../components/championship-badge";
 import { ChampionshipCountdown } from "../components/championship-countdown";
+import { PlayerModal } from "../components/player-modal";
 import { useChampionshipWinners } from "../hooks/use-championship-winners";
 import type { ChampionshipPeriod, Standing } from "../lib/championship";
 import styles from "./home-page.module.css";
@@ -22,6 +23,7 @@ export default function HomePage() {
   const { user, player } = useAuth();
   const [top, setTop] = useState<Standing[]>([]);
   const [period, setPeriod] = useState<ChampionshipPeriod | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const badgeRanks = useChampionshipWinners();
 
   // The front page leads with the week's race rather than the all-time table:
@@ -100,7 +102,13 @@ export default function HomePage() {
         </div>
         <div className={ styles.rankList }>
           { top.map((p, i) => (
-            <div key={ p.id } className={ styles.rankRow }>
+            <button
+              key={ p.id }
+              type="button"
+              className={ styles.rankRow }
+              onClick={ () => setOpenId(p.playerId) }
+              title={ m.player_modal_title() }
+            >
               <span className={ styles.rankPos }>{ i + 1 }</span>
               <span className={ styles.rankNickRow }>
                 <span className={ styles.rankNick }>{ p.nickname }</span>
@@ -120,7 +128,7 @@ export default function HomePage() {
                   }) }
                 </span>
               </div>
-            </div>
+            </button>
           )) }
           { top.length === 0 && (
             <p className={ styles.empty }>{ m.championship_empty() }</p>
@@ -145,6 +153,17 @@ export default function HomePage() {
           desc={ m.home_feature_auth_desc() }
         />
       </section>
+
+      { openId && (
+        // Keyed by the player, so opening a second one starts on page 1 rather than
+        // inheriting the page the last card was left on.
+        <PlayerModal
+          key={ openId }
+          playerId={ openId }
+          badgeRank={ badgeRanks[openId] }
+          onClose={ () => setOpenId(null) }
+        />
+      ) }
     </div>
   );
 }
