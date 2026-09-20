@@ -99,14 +99,12 @@ class SoundManager {
   private ducks = new Map<DuckReason, number>();
   /** Survives a pause and a dispose, so the loop comes back on its own. */
   private musicWanted = false;
+  /** A play has been issued and not yet undone; `playing()` stays false across the whole load. */
+  private musicPlaying = false;
   private tabHidden = false;
   private unlocked = false;
 
-  /**
-   * Arrow properties, not methods: the context hands these out as bare references,
-   * and a prototype method called that way runs with `this` undefined.
-   */
-
+  /** Arrow properties, not methods: the context hands these out as bare references. */
   subscribe = (listener: () => void) => {
     this.listeners.add(listener);
     return () => {
@@ -208,6 +206,7 @@ class SoundManager {
     this.tabHidden = hidden;
 
     if (hidden) {
+      this.musicPlaying = false;
       const howl = this.howls.get("bgMusic");
       if (howl?.playing()) howl.pause();
       return;
@@ -220,15 +219,23 @@ class SoundManager {
     this.howls.forEach((howl) => howl.unload());
     this.howls.clear();
     this.lastPlayed.clear();
+    this.musicPlaying = false;
   };
 
   private resumeMusic(musicWanted: boolean = false) {
     if (!this.unlocked || this.tabHidden || !(this.musicWanted || musicWanted))
       return;
+    if (this.musicPlaying) return;
 
     const howl = this.howl("bgMusic");
     howl.volume(this.volumeFor("bgMusic"));
-    if (!howl.playing()) howl.play();
+
+    howl.once("playerror", () => {
+      this.musicPlaying = false;
+    });
+
+    this.musicPlaying = true;
+    howl.play();
   }
 
   private howl(name: TrackName): Howl {

@@ -13,42 +13,43 @@ import NotificationPreferencesPage from "./pages/settings/notification-preferenc
 import Providers from "./utils/contexts/providers";
 import { SoundProvider } from "./utils/contexts/sound.context";
 import { BootScreen } from "./components/boot-screen";
+import { ToastProvider } from "./components/toast";
 
 export default function App() {
-  // Held above the router on purpose: Paraglide keeps the locale outside React, so
-  // this state re-creating every element below it is what lets components call `m.*()`
-  // directly instead of subscribing to the locale.
+  // Held above the router so a locale change re-creates every element below it, which is what lets components call `m.*()` directly.
   const locale = useLocaleState();
 
   return (
     <LocaleContext.Provider value={ locale }>
       <AuthProvider>
         <SoundProvider>
-          <Providers>
-            <BootScreen>
-              <BrowserRouter>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={ <HomePage /> } />
-                    <Route path="/auth/login" element={ <LoginPage /> } />
-                    <Route path="/auth/signup" element={ <SignupPage /> } />
-                    <Route
-                      path="/auth/forgot-password"
-                      element={ <ForgotPasswordPage /> }
-                    />
-                    <Route path="/ranking" element={ <RankingPage /> } />
-                    <Route path="/play" element={ <PlayPage /> } />
-                    <Route path="/settings" element={ <SettingsPage /> } />
-                    <Route
-                      path="/settings/notifications"
-                      element={ <NotificationPreferencesPage /> }
-                    />
-                    <Route path="*" element={ <Navigate to="/" replace /> } />
-                  </Routes>
-                </Layout>
-              </BrowserRouter>
-            </BootScreen>
-          </Providers>
+          <ToastProvider>
+            <Providers>
+              <BootScreen>
+                <BrowserRouter>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={ <HomePage /> } />
+                      <Route path="/auth/login" element={ <LoginPage /> } />
+                      <Route path="/auth/signup" element={ <SignupPage /> } />
+                      <Route
+                        path="/auth/forgot-password"
+                        element={ <ForgotPasswordPage /> }
+                      />
+                      <Route path="/ranking" element={ <RankingPage /> } />
+                      <Route path="/play" element={ <PlayPage /> } />
+                      <Route path="/settings" element={ <SettingsPage /> } />
+                      <Route
+                        path="/settings/notifications"
+                        element={ <NotificationPreferencesPage /> }
+                      />
+                      <Route path="*" element={ <Navigate to="/" replace /> } />
+                    </Routes>
+                  </Layout>
+                </BrowserRouter>
+              </BootScreen>
+            </Providers>
+          </ToastProvider>
         </SoundProvider>
       </AuthProvider>
     </LocaleContext.Provider>

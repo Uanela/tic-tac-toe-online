@@ -1,28 +1,207 @@
-.toast {
+.viewport {
   position: fixed;
-  bottom: 32px;
   left: 50%;
+  bottom: 24px;
   transform: translateX(-50%);
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px 24px;
-  font-size: 0.88rem;
-  font-family: var(--font-mono);
-  color: var(--text);
   z-index: 400;
-  white-space: nowrap;
-  animation: slideUp 0.25s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
 }
 
-@keyframes slideUp {
+.toast {
+  --tone: var(--accent);
+  pointer-events: auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 14px;
+  padding: 14px 16px;
+  background:
+    radial-gradient(
+      120% 100% at 0% 0%,
+      color-mix(in srgb, var(--tone) 16%, transparent),
+      transparent 58%
+    ),
+    linear-gradient(160deg, var(--surface2), var(--surface) 72%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow:
+    0 18px 40px rgba(0, 0, 0, 0.55),
+    0 0 26px -10px var(--tone);
+  overflow: hidden;
+  animation: toastIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.toast::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--tone);
+  box-shadow: 0 0 12px var(--tone);
+}
+
+.info {
+  --tone: var(--accent);
+}
+
+.success {
+  --tone: var(--success);
+}
+
+.error {
+  --tone: var(--error);
+}
+
+.invite {
+  --tone: var(--x-color);
+  animation:
+    toastIn 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    invitePulse 2.4s ease-in-out infinite 0.32s;
+}
+
+.badge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: var(--tone);
+  background: conic-gradient(
+    var(--tone) calc(var(--progress, 100) * 1%),
+    color-mix(in srgb, var(--tone) 14%, transparent) 0
+  );
+}
+
+/* The inner disc is what turns the ring into an outline rather than a pie. */
+.badge::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.badge > svg {
+  position: relative;
+}
+
+.body {
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.timer {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tone) 16%, transparent);
+  color: var(--tone);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.description {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.description strong {
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Scoped under .toast to outrank the global .btn it is composed with. */
+.toast .action {
+  padding: 7px 16px;
+  font-size: 0.72rem;
+}
+
+@media (min-width: 641px) {
+  .viewport {
+    left: auto;
+    right: 24px;
+    top: 24px;
+    bottom: auto;
+    transform: none;
+  }
+
+  .toast {
+    animation: toastInRight 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .invite {
+    animation:
+      toastInRight 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+      invitePulse 2.4s ease-in-out infinite 0.32s;
+  }
+}
+
+@keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(12px);
+    transform: translateY(16px) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastInRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes invitePulse {
+  0%,
+  100% {
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.55),
+      0 0 26px -12px var(--tone);
+  }
+  50% {
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.55),
+      0 0 38px -4px var(--tone);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .invite {
+    animation: none;
   }
 }

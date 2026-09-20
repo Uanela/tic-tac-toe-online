@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Medal } from "lucide-react";
 import { api } from "../../lib/api";
 import { formatNumber } from "../../lib/format";
@@ -58,6 +59,8 @@ export default function RankingPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const totalPages = Math.ceil(total / LIMIT);
   const badgeRanks = useChampionshipWinners();
+  const navigate = useNavigate();
+  const challenge = (userId: string) => navigate(`/play?challenge=${userId}`);
 
   // Read inside the render, not at module scope: the labels follow the locale.
   const tabs = [
@@ -168,7 +171,7 @@ export default function RankingPage() {
             const badge = badgeRanks[p.playerId];
 
             return (
-              <button
+              <Button
                 key={ p.key }
                 type="button"
                 className={ `${styles.row} ${rank <= 3 ? styles[`top${rank}`] : ""}` }
@@ -216,7 +219,7 @@ export default function RankingPage() {
                     { m.ranking_win_pct({ pct: winPct }) }
                   </span>
                 </div>
-              </button>
+              </Button>
             );
           })
         ) }
@@ -249,6 +252,7 @@ export default function RankingPage() {
           key={ openId }
           playerId={ openId }
           badgeRank={ badgeRanks[openId] }
+          onChallenge={ challenge }
           onClose={ () => setOpenId(null) }
         />
       ) }

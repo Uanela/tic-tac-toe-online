@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { api } from "../../lib/api";
+import { api, errorMessage } from "../../lib/api";
 import { m } from "../../paraglide/messages.js";
 import { Button } from "../../components/button";
 import { Link } from "../../components/link";
@@ -27,8 +27,8 @@ export default function ForgotPasswordPage() {
     try {
       await api.post("/auth/forgot-password", { email });
       setStage("reset");
-    } catch (err: any) {
-      setError(err.message || m.auth_forgot_failed());
+    } catch (err) {
+      setError(errorMessage(err, m.auth_forgot_failed()));
     } finally {
       setLoading(false);
     }
@@ -41,8 +41,8 @@ export default function ForgotPasswordPage() {
     try {
       await api.post("/auth/reset-password", { email, otp, newPassword });
       setStage("done");
-    } catch (err: any) {
-      setError(err.message || m.auth_reset_failed());
+    } catch (err) {
+      setError(errorMessage(err, m.auth_reset_failed()));
     } finally {
       setLoading(false);
     }
@@ -117,24 +117,24 @@ export default function ForgotPasswordPage() {
               { loading ? m.auth_reset_loading() : m.auth_reset_submit() }
             </Button>
 
-            <button
+            <Button
               type="button"
               className={ styles.link }
               disabled={ loading }
               onClick={ () => requestCode() }
             >
               { m.auth_reset_resend() }
-            </button>
+            </Button>
           </form>
 
           <p className={ styles.footer }>
-            <button
+            <Button
               type="button"
               className={ styles.link }
               onClick={ changeEmail }
             >
               { m.auth_reset_back() }
-            </button>
+            </Button>
           </p>
         </div>
       </div>

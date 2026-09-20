@@ -1,10 +1,10 @@
-import type { ButtonHTMLAttributes, MouseEvent } from "react";
+import type { ComponentPropsWithRef, MouseEvent } from "react";
 import { useSound } from "../utils/contexts/sound.context";
 
 export function Button({
   onClick,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
+}: ComponentPropsWithRef<"button">) {
   const { play } = useSound();
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Swords, Handshake, Trophy, Frown, DoorOpen } from "lucide-react";
+import { Swords, Handshake, Trophy, Frown, DoorOpen, Flag } from "lucide-react";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { useSound } from "../../utils/contexts/sound.context";
@@ -13,8 +13,10 @@ import { Scoreboard } from "./components/scoreboard";
 import { GameOverOverlay } from "./components/game-over-overlay";
 import { MatchFoundScreen } from "./components/match-found-screen";
 import { MatchClock } from "./components/match-clock";
+import { LeaveMatchModal } from "./components/leave-match-modal";
+import { WaitTimer } from "./components/wait-timer";
 import styles from "./play-page.module.css";
-import { Toast } from "../../components/toast";
+import { useToast } from "../../utils/contexts/toast.context";
 import { Button } from "../../components/button";
 import { PlayerModal } from "../../components/player-modal";
 import { Link } from "../../components/link";
@@ -80,7 +82,7 @@ interface Player {
 
 const XP_MAP = { win: 50, draw: 15, loss: 5 };
 
-const HIGHLIGHT_MS = 3000;
+const HIGHLIGHT_MS = 1000;
 const CLOCK_TICK_MS = 1000;
 const CLOCK_WARN_MS = 10_000;
 const SEARCH_DUCK = 0.7;
@@ -103,6 +105,7 @@ export default function PlayPage() {
   const game = useGateway("/tic-tac-toe");
   const { play, playMove, duckMusic, unduckMusic, restartLoop, stopLoop } =
     useSound();
+  const toast = useToast();
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -128,8 +131,7 @@ export default function PlayPage() {
     };
   }
 
-  // The `gameState` param outlives the room it names — a reload, a stale tab, a server
-  // restart — so it is untrusted, and a throw in here blanks the app: no error boundary.
+  // The `gameState` param outlives the room it names, and a throw in here blanks the app: no error boundary.
   const [restoredState] = useState<GameState | null>(() => {
     const raw = searchParams.get("gameState");
     if (!raw) return null;
@@ -173,8 +175,7 @@ export default function PlayPage() {
 
   const [poppedCell, setPoppedCell] = useState<number | null>(null);
 
-  // A mark is only ever doomed on the turn of the side that placed the fourth, so this
-  // reads the turn rather than the mark — and both players see it dimmed, not just its owner.
+  // A mark is doomed on the turn of the side that placed the fourth, so this reads the turn rather than the mark.
   const doomedCell = gameState?.doomed?.[gameState.currentTurn] ?? null;
 
   const [overlay, setOverlay] = useState<Overlay | null>(null);
@@ -194,32 +195,57 @@ export default function PlayPage() {
     return () => clearTimeout(id);
   }, [ending, play]);
 
-  // Seeded from a restored room so a rejoin replays nothing it missed. State, not a
-  // ref: the handlers register during render, where a ref cannot be read.
+  // Seeded from a restored room so a rejoin replays nothing it missed; state, not a ref, since handlers register during render.
   const [cues] = useState(() => new GameCues(restoredState ?? undefined));
 
-  const [sentInviteId, setSentInviteId] = useState<string | null>(null);
+  const [sentInvite, setSentInvite] = useState<{
+    id: string;
+    expiresAt: number;
+  } | null>(null);
+  const sentInviteId = sentInvite?.id ?? null;
+  const [waitExpiresAt, setWaitExpiresAt] = useState<number | null>(null);
+  const [forfeitPrompt, setForfeitPrompt] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
   const [invitingId, setInvitingId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const joinEmitter = game.useEmit<{}>("join_game", {
-    ack: true,
-    timeout: 6000,
-  });
+  const joinEmitter = game.useEmit<
+    Record<string, never>,
+    GameServerState | { waiting: true; expiresAt: number }
+  >("join_game", { ack: true, timeout: 6000 });
   const moveEmitter = game.useEmit<{ roomId: string; index: number }>(
     "make_move",
     { ack: true, timeout: 5000 },
   );
-  const sendInviteEmitter = game.useEmit<{ targetUserId: string }>(
-    "send_invite",
-    { ack: true, timeout: 6000 },
-  );
+  const sendInviteEmitter = game.useEmit<
+    { targetUserId: string },
+    { inviteId: string; expiresAt: number }
+  >("send_invite", { ack: true, timeout: 6000 });
 
   const acceptInviteEmitter = game.useEmit<{ inviteId: string }>(
     "accept_invite",
+    { ack: true, timeout: 6000 },
+  );
+
+  const cancelInviteEmitter = game.useEmit<{ inviteId: string }>(
+    "cancel_invite",
+    { ack: true, timeout: 6000 },
+  );
+
+  const leaveQueueEmitter = game.useEmit<Record<string, never>>("leave_queue", {
+    ack: true,
+    timeout: 6000,
+  });
+
+  const leaveGameEmitter = game.useEmit<Record<string, never>>("leave_game", {
+    ack: true,
+    timeout: 6000,
+  });
+
+  const declineInviteEmitter = game.useEmit<{ inviteId: string }>(
+    "decline_invite",
     { ack: true, timeout: 6000 },
   );
 
@@ -232,9 +258,10 @@ export default function PlayPage() {
     return () => {};
   }, [user]);
 
-  // The turn cue starts the tick, so here it only ever needs stopping: for endings the
-  // cue stream never sees, and for leaving mid-match, which never changes `boardLive`.
+  // The turn cue starts the tick, so here it only ever needs stopping.
   const boardLive = screen === "game" && gameState?.status === "playing";
+
+  const promptInvite = boardLive ? searchParams.get("inviteId") || null : null;
 
   useEffect(() => {
     if (!boardLive) stopLoop("clockTicking");
@@ -242,10 +269,11 @@ export default function PlayPage() {
 
   useEffect(() => () => stopLoop("clockTicking"), [stopLoop]);
 
+  // A challenge waits behind the confirmation while a match is live, so this reruns once the player is out of one.
   useEffect(() => {
     const inviteId = searchParams.get("inviteId");
 
-    if (!inviteId) return;
+    if (!inviteId || boardLive) return;
 
     async function accept() {
       if (!inviteId) return;
@@ -255,18 +283,30 @@ export default function PlayPage() {
         { ack: true },
       );
       setOverlay(null);
+      setWinningLine(null);
+      setEnding(null);
 
       if (!result?.success && inviteId) {
-        setToast(result?.error ?? m.play_join_invite_expired());
+        toast.show({
+          variant: "error",
+          description: result?.error ?? m.play_join_invite_expired(),
+        });
         return;
       }
       setSearchParams({ inviteId: "" });
     }
 
     accept();
-  }, [searchParams]);
+  }, [searchParams, boardLive]);
 
-  const [toast, setToast] = useState<string | null>(null);
+  // A challenge sent from a player card on another page arrives as a parameter, here, where its countdown and cancel live.
+  useEffect(() => {
+    const target = searchParams.get("challenge");
+    if (!target) return;
+
+    setSearchParams({}, { replace: true });
+    handleSendInvite(target);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const q = searchQuery.trim();
@@ -312,6 +352,10 @@ export default function PlayPage() {
     async (data: GameServerState) => {
       if (!data) return;
       const state = getGameState(data);
+
+      // The board settles the invite, and the search loop hangs off that invite.
+      setSentInvite(null);
+
       setGameState(state);
       setCounter(10);
 
@@ -319,13 +363,10 @@ export default function PlayPage() {
       for (const cue of fired) {
         switch (cue.kind) {
           case "makeMove":
-            // My placements get the move cue, the opponent's get the "your move" one —
-            // exactly one per placement, so neither has to fight for the speakers.
             if (cue.mark === state.me.mark) playMove(cue.mark);
             else play("changingTurn");
             break;
           case "changingTurn":
-            // Every turn restarts the tick, including one the timeout handed over.
             if (screen === "game") restartLoop("clockTicking", { volume: 0.2 });
             break;
           default:
@@ -336,7 +377,11 @@ export default function PlayPage() {
       if (!data.result) {
         setTimeLeft(data.timeLeftMs ?? null);
 
-        // The match-found card runs over a game that is already live; nothing may cut it short.
+        // A rematch lands here while the last game's summary is still up, so the board has to come back.
+        setOverlay(null);
+        setWinningLine(null);
+        setEnding(null);
+
         if (fired.some((cue) => cue.kind === "opponentFound"))
           setScreen("starting");
         else setScreen((prev) => (prev === "starting" ? prev : "game"));
@@ -364,11 +409,17 @@ export default function PlayPage() {
 
       if (line) play("winStrikeHighlight");
 
-      // Only the XP counter, so it waits its turn: a round-trip must not delay the stinger.
       await refreshPlayer();
     },
     [player, play, playMove, restartLoop, screen, cues],
   );
+
+  const clearSentInvite = (data: { inviteId?: string }) => {
+    setSentInvite((prev) => (prev?.id === data?.inviteId ? null : prev));
+  };
+
+  game.on<{ inviteId?: string }>("invite_declined", clearSentInvite);
+  game.on<{ inviteId?: string }>("invite_expired", clearSentInvite);
 
   game.on<GameServerState>("game_state", handleGameServerState);
   game.on<OpponentLeftData>("opponent_left", async (data) => {
@@ -382,17 +433,21 @@ export default function PlayPage() {
 
   async function handleJoin() {
     const result = await joinEmitter.emit({}, { ack: true });
-    if (!result?.success) {
-      setToast(
-        result.error || (result as any).message || m.play_join_no_opponent(),
-      );
+
+    if (!result?.success || !result.data) {
+      toast.show({
+        variant: "error",
+        description: result?.error || m.play_join_no_opponent(),
+      });
       return;
     }
-    if ((result.data as any)?.waiting) {
+
+    if ("waiting" in result.data) {
+      setWaitExpiresAt(result.data.expiresAt);
       setScreen("waiting");
       return;
     }
-    handleGameServerState(result.data as GameServerState);
+    handleGameServerState(result.data);
   }
 
   async function handleSendInvite(targetUserId: string) {
@@ -403,17 +458,35 @@ export default function PlayPage() {
     );
     setInvitingId(null);
 
-    if (!result?.success)
-      return setToast(result.error || m.play_join_invite_failed());
+    if (!result?.success || !result.data)
+      return toast.show({
+        variant: "error",
+        description: result?.error || m.play_join_invite_failed(),
+      });
 
-    setSentInviteId(result.data.inviteId);
+    setSentInvite({
+      id: result.data.inviteId,
+      expiresAt: result.data.expiresAt,
+    });
     setSearchQuery("");
     setSearchResults([]);
   }
 
-  function handleCancelInvite() {
-    // The server expires the invite on its own; only the local state needs clearing.
-    setSentInviteId(null);
+  async function handleCancelInvite() {
+    if (!sentInviteId) return;
+
+    const result = await cancelInviteEmitter.emit(
+      { inviteId: sentInviteId },
+      { ack: true },
+    );
+
+    if (!result?.success)
+      return toast.show({
+        variant: "error",
+        description: result?.error || m.play_join_cancel_failed(),
+      });
+
+    setSentInvite(null);
   }
 
   async function handleCellClick(index: number) {
@@ -436,20 +509,68 @@ export default function PlayPage() {
     }
   }
 
-  function handlePlayAgain(type?: "invite") {
+  function leaveTable() {
     setOverlay(null);
     setWinningLine(null);
     setEnding(null);
-    setSentInviteId(null);
-    setScreen("join");
-    if (type === "invite") handleSendInvite(gameState?.opponent.userId!);
-    setTimeout(() => {
-      setGameState(null);
-    }, 250);
+    setSentInvite(null);
+    setGameState(null);
   }
 
-  function handleCancelWait() {
-    game.raw.rawSocket.connect();
+  function handleRematch() {
+    // Read before leaving, since leaving is what drops the state it lives on.
+    const opponentUserId = gameState?.opponent.userId;
+
+    leaveTable();
+    setScreen("join");
+    if (opponentUserId) handleSendInvite(opponentUserId);
+  }
+
+  function handleNewOpponent() {
+    leaveTable();
+    setScreen("waiting");
+    handleJoin();
+  }
+
+  async function handleConfirmLeave() {
+    const result = await leaveGameEmitter.emit({}, { ack: true });
+    setForfeitPrompt(false);
+
+    if (!result?.success)
+      return toast.show({
+        variant: "error",
+        description: result?.error || m.leave_failed(),
+      });
+
+    // Clearing the board is what releases a waiting invite.
+    leaveTable();
+    setScreen("join");
+  }
+
+  function handleCancelLeave() {
+    setForfeitPrompt(false);
+
+    if (!promptInvite) return;
+
+    // The challenge was shown and passed over, so the inviter hears it now rather than watching their own timer run out.
+    declineInviteEmitter.emit({ inviteId: promptInvite }, { ack: true });
+    setSearchParams({ inviteId: "" });
+  }
+
+  function handleContinue() {
+    leaveTable();
+    setScreen("join");
+  }
+
+  async function handleCancelWait() {
+    const result = await leaveQueueEmitter.emit({}, { ack: true });
+
+    if (!result?.success)
+      return toast.show({
+        variant: "error",
+        description: result?.error || m.play_join_cancel_failed(),
+      });
+
     setScreen("join");
   }
 
@@ -522,6 +643,7 @@ export default function PlayPage() {
                 <span />
               </div>
               <p className={styles.hint}>{m.play_join_pending()}</p>
+              {sentInvite && <WaitTimer until={sentInvite.expiresAt} />}
               <Button className="btn ghost" onClick={handleCancelInvite}>
                 {m.play_join_cancel()}
               </Button>
@@ -601,6 +723,7 @@ export default function PlayPage() {
             <span />
           </div>
           <p className={styles.hint}>{m.play_join_waiting()}</p>
+          {waitExpiresAt && <WaitTimer until={waitExpiresAt} />}
           <Button className="btn ghost" onClick={handleCancelWait}>
             {m.play_join_cancel()}
           </Button>
@@ -625,6 +748,15 @@ export default function PlayPage() {
             doomedCell={doomedCell}
             winningLine={winningLine}
           />
+          {boardLive && (
+            <Button
+              className={`btn ghost ${styles.giveUp}`}
+              onClick={() => setForfeitPrompt(true)}
+            >
+              <Flag size={15} />
+              {m.play_give_up()}
+            </Button>
+          )}
         </div>
       )}
 
@@ -639,17 +771,34 @@ export default function PlayPage() {
       {overlay && (
         <GameOverOverlay
           {...endingFor(overlay)}
-          onPlayAgain={handlePlayAgain}
+          // A player who walked out cannot be challenged, and their id is already gone from the state.
+          canRematch={overlay.kind !== "left"}
+          onRematch={handleRematch}
+          onNewOpponent={handleNewOpponent}
+          onContinue={handleContinue}
         />
       )}
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
+
+      {(promptInvite !== null || forfeitPrompt) && (
+        <LeaveMatchModal
+          title={m.leave_title()}
+          body={promptInvite ? m.leave_body_invite() : m.leave_body_forfeit()}
+          confirmLabel={m.leave_confirm()}
+          cancelLabel={m.leave_stay()}
+          busy={leaveGameEmitter.loading}
+          onConfirm={handleConfirmLeave}
+          onCancel={handleCancelLeave}
+        />
+      )}
 
       {openId && (
-        // Keyed by the player, so opening a second one starts on page 1 rather than
-        // inheriting the page the last card was left on.
         <PlayerModal
           key={openId}
           playerId={openId}
+          onChallenge={(userId) => {
+            setOpenId(null);
+            handleSendInvite(userId);
+          }}
           onClose={() => setOpenId(null)}
         />
       )}
@@ -657,10 +806,7 @@ export default function PlayPage() {
   );
 }
 
-/**
- * One row of either player list — the search results and the online list are the
- * same row, so a change to what a row offers lands on both.
- */
+/** One row of either player list, so a change to what a row offers lands on both. */
 function PlayerRow({
   player,
   inviting,
@@ -677,7 +823,7 @@ function PlayerRow({
   return (
     <div className={styles.searchRow}>
       {/* A sibling of the challenge button, never its parent: a button cannot nest one. */}
-      <button
+      <Button
         type="button"
         className={styles.searchInfo}
         onClick={onOpen}
@@ -703,7 +849,7 @@ function PlayerRow({
         <span style={{ marginLeft: 10 }} className={styles.searchXp}>
           {m.xp_upper({ xp: formatNumber(player.xp) })}
         </span>
-      </button>
+      </Button>
 
       <Button
         className={`btn ${styles.challengeBtn}`}

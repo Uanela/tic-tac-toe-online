@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 300;
+  z-index: 250;
   animation: fadeIn 0.25s ease;
 }
 
@@ -14,13 +14,13 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 48px 40px;
+  padding: 36px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   text-align: center;
-  min-width: 300px;
+  width: min(340px, calc(100vw - 48px));
   animation: slideUp 0.3s ease;
 }
 
@@ -30,37 +30,28 @@
 }
 
 .title {
-  font-size: 1.75rem;
+  font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--x-color);
 }
 
-.sub {
+.body {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
 }
 
-.sub strong {
-  color: var(--text);
-}
-
-.timer {
-  font-family: var(--font-mono);
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--accent);
-  padding: 6px 20px;
-  border-radius: 999px;
-  background: var(--accent-glow);
-  min-width: 60px;
-  text-align: center;
-}
-
-.actions {
+.menu {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
   margin-top: 8px;
+}
+
+.menu > * {
+  width: 100%;
+  white-space: nowrap;
 }
 
 @keyframes fadeIn {

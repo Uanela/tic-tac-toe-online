@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameState } from "../play.page";
 import { formatNumber } from "../../../lib/format";
 import { m } from "../../../paraglide/messages.js";
+import { Button } from "../../../components/button";
 import { ChampionshipBadge } from "../../../components/championship-badge";
 import { PlayerModal } from "../../../components/player-modal";
 import { useChampionshipWinners } from "../../../hooks/use-championship-winners";
@@ -46,10 +47,6 @@ export function Scoreboard({
   );
 }
 
-/**
- * A raw button rather than the shared `Button`, for the same reason the board's cells
- * are: `Button` plays the make-move cue, and opening a card is not a placement.
- */
 function PlayerCard({
   player,
   mark,
@@ -64,7 +61,7 @@ function PlayerCard({
   onOpen: () => void;
 }) {
   return (
-    <button
+    <Button
       type="button"
       className={`${styles.card} ${mark === "X" ? styles.x : styles.o} ${active ? styles.active : ""}`}
       onClick={onOpen}
@@ -79,6 +76,6 @@ function PlayerCard({
         {m.xp_lower({ xp: formatNumber(player.xp) })}
       </span>
       {active && <span className={styles.turnDot} />}
-    </button>
+    </Button>
   );
 }

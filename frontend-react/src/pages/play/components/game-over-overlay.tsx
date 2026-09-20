@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DoorOpen, RotateCcw, UserPlus } from "lucide-react";
 import { Button } from "../../../components/button";
 import { formatNumber } from "../../../lib/format";
 import { m } from "../../../paraglide/messages.js";
@@ -10,7 +11,10 @@ interface GameOverOverlayProps {
   sub: string;
   titleColor?: string;
   xpGained?: number;
-  onPlayAgain: (type?: "invite") => void;
+  canRematch?: boolean;
+  onRematch: () => void;
+  onNewOpponent: () => void;
+  onContinue: () => void;
 }
 
 export function GameOverOverlay({
@@ -19,7 +23,10 @@ export function GameOverOverlay({
   sub,
   titleColor,
   xpGained,
-  onPlayAgain,
+  canRematch = true,
+  onRematch,
+  onNewOpponent,
+  onContinue,
 }: GameOverOverlayProps) {
   return (
     <div className={styles.overlay}>
@@ -37,12 +44,22 @@ export function GameOverOverlay({
             {m.gameover_xp({ xp: formatNumber(xpGained) })}
           </div>
         )}
-        <Button className="btn" onClick={() => onPlayAgain("invite")}>
-          {m.gameover_play_again()}
-        </Button>
-        <Button className="btn" onClick={() => onPlayAgain()}>
-          {m.gameover_continue()}
-        </Button>
+        <div className={styles.menu}>
+          {canRematch && (
+            <Button className="btn" onClick={onRematch}>
+              <RotateCcw size={17} />
+              {m.gameover_rematch()}
+            </Button>
+          )}
+          <Button className="btn ghost" onClick={onNewOpponent}>
+            <UserPlus size={17} />
+            {m.gameover_new_opponent()}
+          </Button>
+          <Button className="btn ghost" onClick={onContinue}>
+            <DoorOpen size={17} />
+            {m.gameover_continue()}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -303,6 +303,16 @@
   max-width: 340px;
 }
 
+.giveUp {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.giveUp:hover {
+  opacity: 1;
+}
+
 @media (max-width: 640px) {
   .page {
     padding: 20px 16px;
