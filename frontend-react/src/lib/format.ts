@@ -11,3 +11,9 @@ export function formatDate(value: string | Date): string {
     new Date(value)
   );
 }
+
+/** mm:ss. Whole seconds in, so each caller keeps its own rounding. */
+export function formatClock(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}

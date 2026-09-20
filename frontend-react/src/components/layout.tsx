@@ -1,10 +1,10 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useGateway } from "@arkosjs/react-websockets";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "./navbar";
-import { InviteModal } from "./invite-modal";
-import { Toast } from "./toast";
+import { RichText } from "./rich-text";
+import { useToast } from "../utils/contexts/toast.context";
 import { useAuth } from "../utils/contexts/auth.context";
 import { useSound } from "../utils/contexts/sound.context";
 import { m } from "../paraglide/messages.js";
@@ -22,6 +22,7 @@ interface InviteDeclinedData {
 }
 
 interface InviteExpiredData {
+  inviteId?: string;
   message: string;
 }
 
@@ -30,16 +31,7 @@ export function Layout({ children }: { children: React.ReactNode; }) {
   const navigate = useNavigate();
   const game = useGateway("/tic-tac-toe");
   const { play } = useSound();
-
-  const [pendingInvite, setPendingInvite] = useState<InviteReceivedData | null>(
-    null
-  );
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(null);
-    setTimeout(() => setToast(msg), 10);
-  };
+  const toast = useToast();
 
   useEffect(() => {
     if (!user) {
@@ -52,64 +44,81 @@ export function Layout({ children }: { children: React.ReactNode; }) {
     }
   }, [user]);
 
+  const declineInviteEmitter = game.useEmit<{ inviteId: string; }>(
+    "decline_invite",
+    { ack: true, timeout: 6000 }
+  );
+
+  function handleAcceptInvite(inviteId: string) {
+    toast.dismiss(inviteKey(inviteId));
+    navigate(`/play?inviteId=${inviteId}`);
+  }
+
+  function handleDeclineInvite(inviteId: string) {
+    declineInviteEmitter.emit({ inviteId }, { ack: true });
+    toast.dismiss(inviteKey(inviteId));
+  }
+
   game.on<InviteReceivedData>("invite_received", (data) => {
-    setPendingInvite(data);
     play("dimmed");
+    toast.show({
+      key: inviteKey(data.inviteId),
+      variant: "invite",
+      title: m.invite_title(),
+      description: (
+        <RichText parts={ m.invite_body.parts({ nickname: data.fromNickname }) } />
+      ),
+      expiresAt: data.expiresAt,
+      duration: 0,
+      actions: [
+        {
+          label: m.invite_accept(),
+          onClick: () => handleAcceptInvite(data.inviteId),
+        },
+        {
+          label: m.invite_decline(),
+          emphasis: "ghost",
+          onClick: () => handleDeclineInvite(data.inviteId),
+        },
+      ],
+    });
   });
 
   game.on<InviteDeclinedData>("invite_declined", (data) => {
-    showToast(m.toast_invite_declined({ nickname: data.byNickname }));
+    toast.show({
+      variant: "info",
+      title: m.toast_invite_declined_title(),
+      description: (
+        <RichText parts={ m.toast_invite_declined.parts({ nickname: data.byNickname }) } />
+      ),
+    });
   });
 
+  // Also how a cancelled invite arrives, which is why the pending toast is keyed.
   game.on<InviteExpiredData>("invite_expired", (data) => {
-    setPendingInvite(null);
-    // The server composes this one, so it is not translated on the client.
-    showToast(data.message);
+    if (data.inviteId) toast.dismiss(inviteKey(data.inviteId));
+    toast.show({ variant: "info", description: data.message });
   });
 
-  game.on("waiting_timeout", () => {
-    showToast(m.toast_no_opponent());
+  game.on<{ message?: string }>("waiting_timeout", (data) => {
+    toast.show({
+      variant: "error",
+      description: data?.message || m.toast_no_opponent(),
+    });
   });
 
   game.on<GameServerState>("game_state", (data) => {
     navigate(`/play?gameScreen=game&gameState=${JSON.stringify(data)}`);
   });
 
-  async function handleAcceptInvite() {
-    if (!pendingInvite) return;
-    const inviteId = pendingInvite.inviteId;
-    setPendingInvite(null);
-    navigate(`/play?inviteId=${inviteId}`);
-  }
-
-  const declineInviteEmitter = game.useEmit<{ inviteId: string; }>(
-    "decline_invite",
-    { ack: true, timeout: 6000 }
-  );
-
-  function handleDeclineInvite() {
-    if (!pendingInvite) return;
-    declineInviteEmitter.emit(
-      { inviteId: pendingInvite.inviteId },
-      { ack: true }
-    );
-    setPendingInvite(null);
-  }
   return (
     <>
       <Navbar />
       { children }
-
-      { pendingInvite && (
-        <InviteModal
-          fromNickname={ pendingInvite.fromNickname }
-          expiresAt={ pendingInvite.expiresAt }
-          onAccept={ handleAcceptInvite }
-          onDecline={ handleDeclineInvite }
-        />
-      ) }
-
-      { toast && <Toast message={ toast } onDone={ () => setToast(null) } /> }
     </>
   );
+}
+
+function inviteKey(inviteId: string) {
+  return `invite:${inviteId}`;
 }
