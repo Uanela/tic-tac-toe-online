@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "../../utils/contexts/auth.context";
 import { m } from "../../paraglide/messages.js";
 import { Button } from "../../components/button";
+import { errorMessage } from "../../lib/api";
 import { RichText } from "../../components/rich-text";
 import {
   NICKNAME_MAX_LENGTH,
@@ -34,8 +35,8 @@ export default function SignupPage() {
       // backend stores, so what the form showed is what the player gets.
       await signup({ email, password, player: { nickname: parsed.data } });
       window.location.href = "/play";
-    } catch (err: any) {
-      setError(err.message || m.auth_signup_failed());
+    } catch (err) {
+      setError(errorMessage(err, m.auth_signup_failed()));
     } finally {
       setLoading(false);
     }

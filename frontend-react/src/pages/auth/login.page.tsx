@@ -5,6 +5,7 @@ import { m } from "../../paraglide/messages.js";
 import { Button } from "../../components/button";
 import { RichText } from "../../components/rich-text";
 import { Link } from "../../components/link";
+import { errorMessage } from "../../lib/api";
 import styles from "./auth.module.css";
 
 export default function LoginPage() {
@@ -22,8 +23,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate("/play");
-    } catch (err: any) {
-      setError(err.message || m.auth_login_failed());
+    } catch (err) {
+      setError(errorMessage(err, m.auth_login_failed()));
     } finally {
       setLoading(false);
     }
