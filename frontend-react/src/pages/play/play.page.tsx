@@ -823,7 +823,7 @@ function PlayerRow({
   return (
     <div className={styles.searchRow}>
       {/* A sibling of the challenge button, never its parent: a button cannot nest one. */}
-      <button
+      <Button
         type="button"
         className={styles.searchInfo}
         onClick={onOpen}
@@ -849,7 +849,7 @@ function PlayerRow({
         <span style={{ marginLeft: 10 }} className={styles.searchXp}>
           {m.xp_upper({ xp: formatNumber(player.xp) })}
         </span>
-      </button>
+      </Button>
 
       <Button
         className={`btn ${styles.challengeBtn}`}

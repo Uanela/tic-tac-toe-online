@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../components/button";
 import { Link } from "../components/link";
 import { Zap, Trophy, Lock } from "lucide-react";
 import { useAuth } from "../utils/contexts/auth.context";
@@ -105,7 +106,7 @@ export default function HomePage() {
         </div>
         <div className={ styles.rankList }>
           { top.map((p, i) => (
-            <button
+            <Button
               key={ p.id }
               type="button"
               className={ styles.rankRow }
@@ -131,7 +132,7 @@ export default function HomePage() {
                   }) }
                 </span>
               </div>
-            </button>
+            </Button>
           )) }
           { top.length === 0 && (
             <p className={ styles.empty }>{ m.championship_empty() }</p>

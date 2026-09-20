@@ -117,24 +117,24 @@ export default function ForgotPasswordPage() {
               { loading ? m.auth_reset_loading() : m.auth_reset_submit() }
             </Button>
 
-            <button
+            <Button
               type="button"
               className={ styles.link }
               disabled={ loading }
               onClick={ () => requestCode() }
             >
               { m.auth_reset_resend() }
-            </button>
+            </Button>
           </form>
 
           <p className={ styles.footer }>
-            <button
+            <Button
               type="button"
               className={ styles.link }
               onClick={ changeEmail }
             >
               { m.auth_reset_back() }
-            </button>
+            </Button>
           </p>
         </div>
       </div>

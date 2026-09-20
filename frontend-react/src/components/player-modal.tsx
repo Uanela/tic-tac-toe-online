@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Swords, X } from "lucide-react";
 import { api } from "../lib/api";
 import { formatDate, formatNumber } from "../lib/format";
 import { m } from "../paraglide/messages.js";
+import { useSound } from "../utils/contexts/sound.context";
 import { Button } from "./button";
 import { ChampionshipBadge } from "./championship-badge";
 import styles from "./player-modal.module.css";
@@ -63,6 +64,7 @@ export function PlayerModal({
   } | null>(null);
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
+  const { play } = useSound();
 
   const key = `${playerId}:${page}`;
 
@@ -108,7 +110,14 @@ export function PlayerModal({
 
   return (
     // The backdrop is the second way out, so it is a target rather than decoration.
-    <div className={ styles.overlay } onClick={ onClose } role="presentation">
+    <div
+      className={ styles.overlay }
+      onClick={ () => {
+        play("makeMove");
+        onClose();
+      } }
+      role="presentation"
+    >
       <div
         className={ styles.box }
         role="dialog"
@@ -116,7 +125,7 @@ export function PlayerModal({
         aria-label={ known?.player.nickname ?? m.player_modal_title() }
         onClick={ (event) => event.stopPropagation() }
       >
-        <button
+        <Button
           ref={ closeButton }
           type="button"
           className={ styles.close }
@@ -124,7 +133,7 @@ export function PlayerModal({
           aria-label={ m.player_modal_close() }
         >
           <X size={ 18 } />
-        </button>
+        </Button>
 
         { failedKey === key ? (
           <p className={ styles.error }>{ m.player_modal_error() }</p>

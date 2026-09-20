@@ -171,7 +171,7 @@ export default function RankingPage() {
             const badge = badgeRanks[p.playerId];
 
             return (
-              <button
+              <Button
                 key={ p.key }
                 type="button"
                 className={ `${styles.row} ${rank <= 3 ? styles[`top${rank}`] : ""}` }
@@ -219,7 +219,7 @@ export default function RankingPage() {
                     { m.ranking_win_pct({ pct: winPct }) }
                   </span>
                 </div>
-              </button>
+              </Button>
             );
           })
         ) }
