@@ -18,6 +18,16 @@ import challengeEmail from "../utils/email-templates/challenge.email";
 import notificationPreferenceService from "../../notification-preference/notification-preference.service";
 import botService from "../services/bot.service";
 
+/** Every ack answers with `success`; the failures add a reason, the successes their payload. */
+interface AckResult<T = undefined> {
+  success: boolean;
+  error?: string;
+  alreadyInGame?: boolean;
+  data?: T;
+}
+
+type Ack<T = undefined> = (result: AckResult<T>) => void;
+
 const WAITING_TIMEOUT_MS = 20_000;
 const BOT_MATCH_TIMEOUT_MS = 10_000;
 const BOT_MOVE_MIN_MS = 1_000;
@@ -246,8 +256,8 @@ class TicTacToeController extends ArkosGatewayController {
 
   joinGame = async (
     socket: ArkosSocket,
-    _data: any,
-    ack?: (res: any) => void,
+    _data: unknown,
+    ack?: Ack<GameState | { waiting: true; expiresAt: number }>,
   ) => {
     const userId = socket.currentUser!.id;
     const player = await ticTacToeService.resolvePlayer(userId);
@@ -348,7 +358,10 @@ class TicTacToeController extends ArkosGatewayController {
 
     ticTacToeService.setBotMatchTimer(botTimer);
 
-    ack?.({ success: true, data: { waiting: true } });
+    ack?.({
+      success: true,
+      data: { waiting: true, expiresAt: Date.now() + WAITING_TIMEOUT_MS },
+    });
   };
 
   private async matchWithBot(
@@ -414,7 +427,7 @@ class TicTacToeController extends ArkosGatewayController {
   sendInvite = async (
     socket: ArkosSocket,
     data: { targetUserId: string },
-    ack?: (res: any) => void,
+    ack?: Ack<{ inviteId: string; expiresAt: number }>,
   ) => {
     const userId = socket.currentUser!.id;
 
@@ -525,7 +538,7 @@ class TicTacToeController extends ArkosGatewayController {
   acceptInvite = async (
     socket: ArkosSocket,
     data: { inviteId: string },
-    ack?: (res: any) => void,
+    ack?: Ack<GameState | null>,
   ) => {
     const userId = socket.currentUser!.id;
     const invite = ticTacToeService.getInvite(data?.inviteId);
@@ -563,7 +576,7 @@ class TicTacToeController extends ArkosGatewayController {
   declineInvite = async (
     socket: ArkosSocket,
     data: { inviteId: string },
-    ack?: (res: any) => void,
+    ack?: Ack,
   ) => {
     const userId = socket.currentUser!.id;
     const invite = ticTacToeService.getInvite(data?.inviteId);
@@ -587,10 +600,51 @@ class TicTacToeController extends ArkosGatewayController {
     ack?.({ success: true });
   };
 
+  cancelInvite = async (
+    socket: ArkosSocket,
+    data: { inviteId: string },
+    ack?: Ack,
+  ) => {
+    const invite = ticTacToeService.getInvite(data?.inviteId);
+
+    if (!invite || invite.fromUserId !== socket.currentUser!.id)
+      return ack?.({ success: false, error: "Invite not found." });
+
+    clearTimeout(invite.timer);
+    ticTacToeService.deleteInvite(invite.id);
+
+    try {
+      // Reusing `invite_expired`: the invited client closes the challenge on it either way.
+      socket.to(invite.toSocketId).emit("invite_expired", {
+        inviteId: invite.id,
+        message: `${invite.fromNickname} cancelled the challenge.`,
+      });
+    } catch {}
+
+    ack?.({ success: true });
+  };
+
+  leaveQueue = async (socket: ArkosSocket, _data: unknown, ack?: Ack) => {
+    ticTacToeService.cancelWaitingQueueBySocketId(socket.id);
+    ack?.({ success: true });
+  };
+
+  leaveGame = async (socket: ArkosSocket, _data: unknown, ack?: Ack) => {
+    const room = ticTacToeService.findRoomBySocket(socket.id);
+    const leaving = room?.players.find((p) => p.socketId === socket.id);
+
+    if (!room || !leaving || room.status === "finished")
+      return ack?.({ success: false, error: "You are not in a game." });
+
+    await this.concede(socket, room, leaving, "Your opponent gave up. You win!");
+
+    ack?.({ success: true });
+  };
+
   makeMove = async (
     socket: ArkosSocket,
     data: { roomId: string; index: number },
-    ack?: (res: any) => void,
+    ack?: Ack,
   ) => {
     const { roomId, index } = data ?? {};
     const room = ticTacToeService.getRoom(roomId);
@@ -604,8 +658,11 @@ class TicTacToeController extends ArkosGatewayController {
 
     try {
       await this.applyMove(socket, room, player, index);
-    } catch (err: any) {
-      return ack?.({ success: false, error: err.message });
+    } catch (err) {
+      return ack?.({
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
 
     ack?.({ success: true });
@@ -640,11 +697,27 @@ class TicTacToeController extends ArkosGatewayController {
     const room = ticTacToeService.findRoomBySocket(socket.id);
     if (!room || room.status === "finished") return;
 
+    const leaving = room.players.find((p) => p.socketId === socket.id);
+    if (!leaving) return;
+
+    await this.concede(
+      socket,
+      room,
+      leaving,
+      "Your opponent disconnected. You win by default!",
+    );
+  }
+
+  private async concede(
+    socket: ArkosSocket,
+    room: GameRoom,
+    leaving: SocketPlayer,
+    message: string,
+  ) {
     room.status = "finished";
     ticTacToeService.updateRoom(room.id, { status: "finished" });
 
-    const leavingPlayer = room.players.find((p) => p.socketId === socket.id)!;
-    const opp = ticTacToeService.opponent(room, leavingPlayer.playerId);
+    const opp = ticTacToeService.opponent(room, leaving.playerId);
 
     const gameResult =
       room.players[0].playerId === opp.playerId
@@ -657,13 +730,11 @@ class TicTacToeController extends ArkosGatewayController {
       room.gameId,
       gameResult,
       opp.playerId,
-      leavingPlayer.playerId,
+      leaving.playerId,
     );
 
     try {
-      socket.user(opp.userId).emit("opponent_left", {
-        message: "Your opponent disconnected. You win by default!",
-      });
+      socket.user(opp.userId).emit("opponent_left", { message });
     } catch {
       // A socket that died between the lookup and this emit.
     }

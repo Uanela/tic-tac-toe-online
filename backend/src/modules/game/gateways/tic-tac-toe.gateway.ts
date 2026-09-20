@@ -24,6 +24,18 @@ tictactoeGateway.on(
   ticTacToeController.declineInvite
 );
 tictactoeGateway.on(
+  { event: "cancel_invite", ack: true },
+  ticTacToeController.cancelInvite
+);
+tictactoeGateway.on(
+  { event: "leave_queue", ack: true },
+  ticTacToeController.leaveQueue
+);
+tictactoeGateway.on(
+  { event: "leave_game", ack: true },
+  ticTacToeController.leaveGame
+);
+tictactoeGateway.on(
   { event: "make_move", ack: true },
   ticTacToeController.makeMove
 );
