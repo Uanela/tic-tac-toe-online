@@ -62,3 +62,4 @@ Open the app in **two browser tabs** to play against yourself, or share the URL 
 
 - [ArkosGateway Documentation](https://www.arkosjs.com/docs/core-concepts/components/gateways)
 - [Arkos.js GitHub](https://github.com/uanela/arkos)
+
