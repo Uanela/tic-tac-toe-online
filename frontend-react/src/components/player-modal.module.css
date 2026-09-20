@@ -81,6 +81,10 @@
   color: var(--muted);
 }
 
+.challenge {
+  width: 100%;
+}
+
 .tiles {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -190,8 +194,7 @@
   white-space: nowrap;
 }
 
-/* No margin here: the space between the two is a real one in the markup, so the
-   row reads as "vs carlie39" to a screen reader and not as one long word. */
+/* No margin: the space before it is in the markup, so the row reads as "vs carlie39". */
 .vs {
   color: var(--muted);
   font-weight: 400;
@@ -212,8 +215,7 @@
   padding-top: 4px;
 }
 
-/* Overrides the shared button's text padding down to a square, the way the play
-   screen's own `.challengeBtn` does. */
+/* Squares off the shared button's text padding, as the play screen's own pager does. */
 .pager {
   padding: 9px;
   min-width: 36px;

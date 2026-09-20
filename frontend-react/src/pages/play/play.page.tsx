@@ -795,6 +795,10 @@ export default function PlayPage() {
         <PlayerModal
           key={openId}
           playerId={openId}
+          onChallenge={(userId) => {
+            setOpenId(null);
+            handleSendInvite(userId);
+          }}
           onClose={() => setOpenId(null)}
         />
       )}

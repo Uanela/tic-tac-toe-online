@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "../components/link";
 import { Zap, Trophy, Lock } from "lucide-react";
 import { useAuth } from "../utils/contexts/auth.context";
@@ -25,6 +26,8 @@ export default function HomePage() {
   const [period, setPeriod] = useState<ChampionshipPeriod | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const badgeRanks = useChampionshipWinners();
+  const navigate = useNavigate();
+  const challenge = (userId: string) => navigate(`/play?challenge=${userId}`);
 
   // The front page leads with the week's race rather than the all-time table:
   // the standing a visitor can still change is the more useful thing to show.
@@ -155,12 +158,11 @@ export default function HomePage() {
       </section>
 
       { openId && (
-        // Keyed by the player, so opening a second one starts on page 1 rather than
-        // inheriting the page the last card was left on.
         <PlayerModal
           key={ openId }
           playerId={ openId }
           badgeRank={ badgeRanks[openId] }
+          onChallenge={ challenge }
           onClose={ () => setOpenId(null) }
         />
       ) }

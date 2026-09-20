@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Swords, X } from "lucide-react";
 import { api } from "../lib/api";
 import { formatDate, formatNumber } from "../lib/format";
 import { m } from "../paraglide/messages.js";
@@ -22,6 +22,7 @@ interface Match {
 
 interface Profile {
   id: string;
+  userId: string;
   nickname: string;
   xp: number;
   wins: number;
@@ -42,18 +43,20 @@ interface PlayerModalProps {
   playerId: string;
   /** Read off the page's own winners fetch, so opening the card costs no second request. */
   badgeRank?: number;
+  /** Offered only where a challenge can be sent; the ranking table has no way to send one. */
+  onChallenge?: (userId: string) => void;
   onClose: () => void;
 }
 
-/**
- * The card behind a player: who they are, how they are doing, and the games they
- * have settled, five to a page. Every clickable player on the site opens this same
- * card, so the table behind it and the scoreboard above it cannot drift apart.
- */
-export function PlayerModal({ playerId, badgeRank, onClose }: PlayerModalProps) {
+/** Every clickable player on the site opens this same card, so the table and the scoreboard cannot drift apart. */
+export function PlayerModal({
+  playerId,
+  badgeRank,
+  onChallenge,
+  onClose,
+}: PlayerModalProps) {
   const [page, setPage] = useState(1);
-  // Answers carry the player and page they belong to, so a card that has paged or
-  // moved on reads as loading rather than showing the last request's rows.
+  // Answers carry the player and page they belong to, so a stale one reads as loading.
   const [loaded, setLoaded] = useState<{
     key: string;
     profile: ProfileResponse;
@@ -77,14 +80,12 @@ export function PlayerModal({ playerId, badgeRank, onClose }: PlayerModalProps) 
         if (live) setFailedKey(`${playerId}:${page}`);
       });
 
-    // What this guards is a response landing after the card has closed or paged on.
     return () => {
       live = false;
     };
   }, [playerId, page]);
 
-  // The header and stats are the same on every page, so they are held from whichever
-  // answer arrived last for this player and only the rows swap out underneath.
+  // The header and stats are the same on every page, so only the rows swap out underneath.
   const known = loaded?.profile.player.id === playerId ? loaded.profile : null;
   const current = loaded?.key === key ? loaded.profile : null;
 
@@ -93,8 +94,7 @@ export function PlayerModal({ playerId, badgeRank, onClose }: PlayerModalProps) 
       if (event.key === "Escape") onClose();
     };
 
-    // Held while the card is up, then put back as it was rather than cleared: the
-    // play screen and the ranking both scroll behind it.
+    // Locked only for as long as the card is up; the page behind it scrolls again after.
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKeyDown);
@@ -133,6 +133,7 @@ export function PlayerModal({ playerId, badgeRank, onClose }: PlayerModalProps) 
             profile={ known }
             matches={ current?.matches ?? null }
             badgeRank={ badgeRank }
+            onChallenge={ onChallenge }
             page={ page }
             onPageChange={ setPage }
           />
@@ -148,6 +149,7 @@ function ProfileBody({
   profile,
   matches,
   badgeRank,
+  onChallenge,
   page,
   onPageChange,
 }: {
@@ -155,6 +157,7 @@ function ProfileBody({
   /** Null while the page is on its way; the header above stays put. */
   matches: Match[] | null;
   badgeRank?: number;
+  onChallenge?: (userId: string) => void;
   page: number;
   onPageChange: (page: number) => void;
 }) {
@@ -163,8 +166,7 @@ function ProfileBody({
   const winPct = games > 0 ? Math.round((player.wins / games) * 100) : 0;
   const totalPages = Math.max(1, Math.ceil(total / profile.limit));
 
-  // The ranking table already spells W/L/D in both languages, so the history reuses
-  // it rather than a second set of the same three letters.
+  // The ranking table already spells W/L/D in both languages, so the history reuses it.
   const resultLabel: Record<MatchResult, string> = {
     win: m.ranking_w_suffix(),
     loss: m.ranking_l_suffix(),
@@ -182,6 +184,16 @@ function ProfileBody({
           { m.player_modal_since({ date: formatDate(player.createdAt) }) }
         </span>
       </header>
+
+      { onChallenge && (
+        <Button
+          className={ `btn ${styles.challenge}` }
+          onClick={ () => onChallenge(player.userId) }
+        >
+          <Swords size={ 17 } />
+          { m.player_modal_challenge() }
+        </Button>
+      ) }
 
       <div className={ styles.tiles }>
         <Tile label={ m.home_stat_xp() } value={ formatNumber(player.xp) } />
@@ -230,8 +242,7 @@ function ProfileBody({
       ) }
 
       { totalPages > 1 && (
-        // Arrows only: the card is narrow, and "previous"/"next" spelled out pushed the
-        // count onto three lines between them.
+        // Arrows only: the card is too narrow for "previous" and "next" spelled out.
         <div className={ styles.pagination }>
           <Button
             className={ `btn ghost ${styles.pager}` }

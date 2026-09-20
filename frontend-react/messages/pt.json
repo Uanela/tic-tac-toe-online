@@ -208,6 +208,7 @@
   "player_modal_error": "Não foi possível carregar este jogador.",
   "player_modal_since": "Membro desde {date}",
   "player_modal_recent": "Partidas recentes",
+  "player_modal_challenge": "Desafiar",
   "player_modal_no_matches": "Ainda não jogou nenhuma partida.",
   "player_modal_vs": "vs"
 }

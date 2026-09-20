@@ -208,6 +208,7 @@
   "player_modal_error": "Could not load this player.",
   "player_modal_since": "Member since {date}",
   "player_modal_recent": "Recent matches",
+  "player_modal_challenge": "Challenge",
   "player_modal_no_matches": "No matches played yet.",
   "player_modal_vs": "vs"
 }
