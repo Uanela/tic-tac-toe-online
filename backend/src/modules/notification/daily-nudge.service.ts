@@ -7,6 +7,7 @@ import notificationService from "./notification.service";
 import notifierService from "./notifier.service";
 import { BOARDS, type Place } from "./utils/leaderboards";
 
+const MAPUTO_OFFSET_MS = 2 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FRESH_DAYS = 7;
 const SNAPSHOT_KEEP_DAYS = 14;
@@ -14,15 +15,16 @@ const CRITICAL_WEEKDAYS = [6, 0];
 const FINAL_WEEKDAY = 0;
 
 function maputoDay(at: Date) {
-  const local = new Date(at.getTime());
+  const local = new Date(at.getTime() + MAPUTO_OFFSET_MS);
 
   return new Date(
-    Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()),
+    Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) -
+      MAPUTO_OFFSET_MS
   );
 }
 
 function maputoWeekday(at: Date) {
-  return new Date(at.getTime()).getUTCDay();
+  return new Date(at.getTime() + MAPUTO_OFFSET_MS).getUTCDay();
 }
 
 interface Human {
@@ -60,20 +62,19 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
 
     const playerIds = players.map((player) => player.id);
 
-    const [nudged, playedToday, enrolled, ranks, remembered] =
-      await Promise.all([
-        notificationService.engagedToday(
-          players.map((player) => player.userId),
-          day,
-        ),
-        this.playedToday(playerIds, day),
-        championshipService.playedIn(
-          [championshipService.periodFor(), championshipService.pendingClose()],
-          playerIds,
-        ),
-        this.boards(),
-        this.remembered(playerIds, day),
-      ]);
+    const [nudged, playedToday, enrolled, ranks, remembered] = await Promise.all([
+      notificationService.engagedToday(
+        players.map((player) => player.userId),
+        day
+      ),
+      this.playedToday(playerIds, day),
+      championshipService.playedIn(
+        [championshipService.periodFor(), championshipService.pendingClose()],
+        playerIds
+      ),
+      this.boards(),
+      this.remembered(playerIds, day),
+    ]);
 
     const fresh = at.getTime() - FRESH_DAYS * DAY_MS;
 
@@ -81,12 +82,7 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
       if (nudged.has(player.userId)) continue;
 
       await this.nudge(player, {
-        championship: this.standing(
-          "Championship",
-          player.id,
-          ranks,
-          remembered,
-        ),
+        championship: this.standing("Championship", player.id, ranks, remembered),
         global: this.standing("Global", player.id, ranks, remembered),
         playedToday: playedToday.has(player.id),
         enrolled: enrolled.has(player.id),
@@ -144,7 +140,7 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
           createdAt: true,
           user: { select: { email: true } },
         },
-      },
+      }
     );
   }
 
@@ -157,17 +153,17 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
           { playerTwoId: { in: playerIds } },
         ],
       },
-      { select: { playerOneId: true, playerTwoId: true } },
+      { select: { playerOneId: true, playerTwoId: true } }
     );
 
     return new Set(
-      games.flatMap((game) => [game.playerOneId, game.playerTwoId]),
+      games.flatMap((game) => [game.playerOneId, game.playerTwoId])
     );
   }
 
   private async boards() {
     const boards = await Promise.all(
-      BOARDS.map(async (board) => [board.board, await board.ranks()] as const),
+      BOARDS.map(async (board) => [board.board, await board.ranks()] as const)
     );
 
     return new Map(boards);
@@ -179,7 +175,7 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
       {
         orderBy: { day: "desc" },
         select: { playerId: true, board: true, rank: true },
-      },
+      }
     );
 
     const latest = new Map<string, number>();
@@ -196,7 +192,7 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
     board: RankBoard,
     playerId: string,
     ranks: Map<RankBoard, Map<string, Place>>,
-    remembered: Map<string, number>,
+    remembered: Map<string, number>
   ): Standing | undefined {
     const place = ranks.get(board)?.get(playerId);
     if (!place) return undefined;
@@ -213,7 +209,7 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
   private async snapshot(
     players: Human[],
     ranks: Map<RankBoard, Map<string, Place>>,
-    day: Date,
+    day: Date
   ) {
     const data = players.flatMap((player) =>
       BOARDS.flatMap((board) => {
@@ -222,7 +218,7 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
         return place
           ? [{ playerId: player.id, board: board.board, rank: place.rank, day }]
           : [];
-      }),
+      })
     );
 
     if (!data.length) return;
@@ -245,4 +241,3 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
 const dailyNudgeService = new DailyNudgeService("rank-snapshot");
 
 export default dailyNudgeService;
-

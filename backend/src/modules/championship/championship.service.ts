@@ -2,6 +2,7 @@ import { BaseService } from "arkos/services";
 import { PlayerType } from "@prisma/client";
 import { GameOutcome, XP_PER_RESULT } from "../player/player.service";
 
+const MAPUTO_OFFSET_MS = 2 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PERIOD_MS = 7 * DAY_MS;
 const PRIOR_PERIODS = 8;
@@ -60,15 +61,15 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
    * then move back.
    */
   periodFor(at: Date = new Date()): ChampionshipBounds {
-    const local = new Date(at.getTime());
+    const local = new Date(at.getTime() + MAPUTO_OFFSET_MS);
     const daysSinceMonday = (local.getUTCDay() + 6) % 7;
     const mondayLocalMidnight = Date.UTC(
       local.getUTCFullYear(),
       local.getUTCMonth(),
-      local.getUTCDate() - daysSinceMonday,
+      local.getUTCDate() - daysSinceMonday
     );
 
-    const startedAt = new Date(mondayLocalMidnight);
+    const startedAt = new Date(mondayLocalMidnight - MAPUTO_OFFSET_MS);
 
     return { startedAt, endedAt: new Date(startedAt.getTime() + PERIOD_MS) };
   }
@@ -92,7 +93,7 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
    */
   async recordGame(
     outcomes: { playerId: string; result: GameOutcome }[],
-    at: Date = new Date(),
+    at: Date = new Date()
   ) {
     if (outcomes.length === 0) return;
 
@@ -120,8 +121,8 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
             losses: { increment: result === "loss" ? 1 : 0 },
             draws: { increment: result === "draw" ? 1 : 0 },
           },
-        }),
-      ),
+        })
+      )
     );
   }
 
@@ -156,12 +157,7 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
       firstGameAt: row.firstGameAt,
     }));
 
-    return {
-      players: await this.breakTies(players, period),
-      total,
-      page,
-      limit,
-    };
+    return { players: await this.breakTies(players, period), total, page, limit };
   }
 
   /** Everyone who played the week, best first, and nothing that identifies a contact. */
@@ -207,7 +203,7 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
 
   async playedIn(
     periods: ChampionshipBounds[],
-    playerIds: string[],
+    playerIds: string[]
   ): Promise<Set<string>> {
     if (playerIds.length === 0) return new Set();
 
@@ -216,7 +212,7 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
         startedAt: { in: periods.map((period) => period.startedAt) },
         playerId: { in: playerIds },
       },
-      { select: { playerId: true } },
+      { select: { playerId: true } }
     );
 
     return new Set(rows.map((row) => row.playerId));
@@ -308,7 +304,7 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
    */
   private async breakTies<T extends Sortable>(
     rows: T[],
-    period: ChampionshipBounds,
+    period: ChampionshipBounds
   ): Promise<T[]> {
     const groups: T[][] = [];
 
@@ -326,10 +322,7 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
 
     const [history, signups] = await Promise.all([
       this.prisma.playerChampionshipStats.findMany({
-        where: {
-          playerId: { in: playerIds },
-          startedAt: { lt: period.startedAt },
-        },
+        where: { playerId: { in: playerIds }, startedAt: { lt: period.startedAt } },
         orderBy: { startedAt: "desc" },
         select: { playerId: true, xp: true },
       }),
@@ -361,7 +354,7 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
     };
 
     return groups.flatMap((group) =>
-      group.length > 1 ? group.sort(byTieBreak) : group,
+      group.length > 1 ? group.sort(byTieBreak) : group
     );
   }
 
@@ -376,9 +369,6 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
   }
 }
 
-const championshipService = new ChampionshipService(
-  "player-championship-stats",
-);
+const championshipService = new ChampionshipService("player-championship-stats");
 
 export default championshipService;
-
