@@ -58,6 +58,35 @@
   margin-left: auto;
 }
 
+.bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+
+.bell:hover {
+  color: var(--text);
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
 .xp {
   display: flex;
   align-items: center;
@@ -155,8 +184,11 @@
     padding 0.25s ease;
 }
 
+/* Tall enough for every row the drawer can hold plus the account block; a fixed cap
+   was what pushed the logout button past the bottom of the screen and hid it. */
 .drawer.open {
-  max-height: 300px;
+  max-height: min(440px, calc(100vh - 64px));
+  overflow-y: auto;
   padding: 12px 0 16px;
 }
 

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGateway } from "@arkosjs/react-websockets";
+import { Bell } from "lucide-react";
 import { useAuth } from "../utils/contexts/auth.context";
+import { useNotifications } from "../utils/contexts/notifications.context";
 import { m } from "../paraglide/messages.js";
 import { Button } from "./button";
 import { Link } from "./link";
@@ -10,6 +12,7 @@ import styles from "./navbar.module.css";
 
 export function Navbar() {
   const { user, player, logout } = useAuth();
+  const { unread } = useNotifications();
   const navigate = useNavigate();
   const game = useGateway("/tic-tac-toe");
   const [open, setOpen] = useState(false);
@@ -50,6 +53,20 @@ export function Navbar() {
         </div>
 
         <div className={styles.right}>
+          { user && (
+            <Link
+              to="/notifications"
+              className={styles.bell}
+              aria-label={ m.nav_inbox() }
+              title={ m.nav_inbox() }
+            >
+              <Bell size={ 19 } />
+              { unread > 0 && (
+                <span className={styles.badge}>{ unread > 9 ? "9+" : unread }</span>
+              ) }
+            </Link>
+          ) }
+
           <div className={styles.barLocale}>
             <LocaleSwitcher />
           </div>

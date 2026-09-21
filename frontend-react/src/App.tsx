@@ -10,6 +10,8 @@ import RankingPage from "./pages/ranking/ranking.page";
 import PlayPage from "./pages/play/play.page";
 import SettingsPage from "./pages/settings/settings.page";
 import NotificationPreferencesPage from "./pages/settings/notification-preferences.page";
+import NotificationsPage from "./pages/notifications/notifications.page";
+import { NotificationsProvider } from "./utils/contexts/notifications.context";
 import Providers from "./utils/contexts/providers";
 import { SoundProvider } from "./utils/contexts/sound.context";
 import { BootScreen } from "./components/boot-screen";
@@ -25,29 +27,35 @@ export default function App() {
         <SoundProvider>
           <ToastProvider>
             <Providers>
-              <BootScreen>
-                <BrowserRouter>
-                  <Layout>
-                    <Routes>
-                      <Route path="/" element={ <HomePage /> } />
-                      <Route path="/auth/login" element={ <LoginPage /> } />
-                      <Route path="/auth/signup" element={ <SignupPage /> } />
-                      <Route
-                        path="/auth/forgot-password"
-                        element={ <ForgotPasswordPage /> }
-                      />
-                      <Route path="/ranking" element={ <RankingPage /> } />
-                      <Route path="/play" element={ <PlayPage /> } />
-                      <Route path="/settings" element={ <SettingsPage /> } />
-                      <Route
-                        path="/settings/notifications"
-                        element={ <NotificationPreferencesPage /> }
-                      />
-                      <Route path="*" element={ <Navigate to="/" replace /> } />
-                    </Routes>
-                  </Layout>
-                </BrowserRouter>
-              </BootScreen>
+              <NotificationsProvider>
+                <BootScreen>
+                  <BrowserRouter>
+                    <Layout>
+                      <Routes>
+                        <Route path="/" element={ <HomePage /> } />
+                        <Route path="/auth/login" element={ <LoginPage /> } />
+                        <Route path="/auth/signup" element={ <SignupPage /> } />
+                        <Route
+                          path="/auth/forgot-password"
+                          element={ <ForgotPasswordPage /> }
+                        />
+                        <Route path="/ranking" element={ <RankingPage /> } />
+                        <Route path="/play" element={ <PlayPage /> } />
+                        <Route
+                          path="/notifications"
+                          element={ <NotificationsPage /> }
+                        />
+                        <Route path="/settings" element={ <SettingsPage /> } />
+                        <Route
+                          path="/settings/notifications"
+                          element={ <NotificationPreferencesPage /> }
+                        />
+                        <Route path="*" element={ <Navigate to="/" replace /> } />
+                      </Routes>
+                    </Layout>
+                  </BrowserRouter>
+                </BootScreen>
+              </NotificationsProvider>
             </Providers>
           </ToastProvider>
         </SoundProvider>

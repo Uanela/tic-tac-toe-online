@@ -1,0 +1,190 @@
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 16px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.header p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-family: var(--font-mono);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--muted);
+}
+
+/* A live offer, which is the one row on this page that still wants an answer. */
+.live {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface2));
+  color: var(--accent);
+}
+
+.accepted {
+  border-color: color-mix(in srgb, var(--success) 40%, var(--border));
+  background: color-mix(in srgb, var(--success) 12%, var(--surface2));
+  color: var(--success);
+}
+
+.declined {
+  border-color: color-mix(in srgb, var(--error) 40%, var(--border));
+  background: color-mix(in srgb, var(--error) 12%, var(--surface2));
+  color: var(--error);
+}
+
+/* Losing a place reads as a loss too, and the falling arrow is what tells the two apart. */
+.dropped {
+  border-color: color-mix(in srgb, var(--error) 40%, var(--border));
+  background: color-mix(in srgb, var(--error) 12%, var(--surface2));
+  color: var(--error);
+}
+
+/* A nudge is not bad news, it is the app asking for another game. */
+.nudge {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface2));
+  color: var(--accent);
+}
+
+.welcome {
+  border-color: color-mix(in srgb, var(--success) 40%, var(--border));
+  background: color-mix(in srgb, var(--success) 12%, var(--surface2));
+  color: var(--success);
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sentence {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+}
+
+/* The buttons hold the right edge of the row on their own, at whatever width they
+   need, so the sentence beside them is the only thing that ever gives ground. */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  margin-left: auto;
+}
+
+.empty {
+  padding: 28px 20px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+}
+
+/*
+ * Narrow rows put the words on one line and the buttons under them. Squeezed onto a
+ * single line the sentence collapsed to a column of broken syllables, and the sword
+ * button wrapped its own label out of the button.
+ */
+@media (max-width: 600px) {
+  .row {
+    flex-wrap: wrap;
+    column-gap: 14px;
+    row-gap: 12px;
+  }
+
+  .text {
+    flex: 1 1 calc(100% - 48px);
+  }
+
+  .actions {
+    flex: 1 1 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  /* The icon already says it, and here it is the label that costs the row its line.
+     With the words gone the button gives back the room the words were using. */
+  .sword {
+    width: 42px;
+    padding: 12px;
+  }
+
+  .swordLabel {
+    display: none;
+  }
+}
+
+.gate {
+  max-width: 520px;
+  margin: 80px auto;
+  padding: 0 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gate h2 {
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.gate p {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.gateCta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
