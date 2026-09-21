@@ -1,3 +1,7 @@
+# Neither needs its install script: firebase ships prebuilt, and protobufjs only links its CLI.
+allowBuilds:
+  '@firebase/util': false
+  protobufjs: false
 minimumReleaseAgeExclude:
   - '@arkosjs/react-websockets@0.2.0 || 0.3.0'
   - '@arkosjs/websockets-client@0.2.0'

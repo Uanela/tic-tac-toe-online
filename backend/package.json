@@ -27,6 +27,7 @@
     "@scalar/express-api-reference": "0.8.35",
     "arkos": "1.8.0-canary.4",
     "express": "4.22.1",
+    "firebase-admin": "^14.4.0",
     "node-cron": "^4.2.1",
     "socket.io": "^4.8.3",
     "zod": "4.4.3"
