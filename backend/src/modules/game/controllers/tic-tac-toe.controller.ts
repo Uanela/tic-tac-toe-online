@@ -538,9 +538,29 @@ class TicTacToeController extends ArkosGatewayController {
     ack?: Ack<GameState | null>,
   ) => {
     const userId = socket.currentUser!.id;
-    const invite = ticTacToeService.getInvite(data?.inviteId);
+    const inviteId = data?.inviteId;
 
-    if (!invite || invite.toUserId !== userId)
+    if (!inviteId)
+      return ack?.({ success: false, error: "Invite not found." });
+
+    const invite = ticTacToeService.getInvite(inviteId);
+
+    if (!invite) {
+      const lapsed = await notificationService.lapsedInvite(userId, inviteId);
+
+      if (!lapsed?.fromUserId)
+        return ack?.({
+          success: false,
+          error: "This challenge is no longer live.",
+        });
+
+      await notificationService.resolveByInvite(userId, inviteId, "Accepted");
+      await this.sendInvite(socket, { targetUserId: lapsed.fromUserId });
+
+      return ack?.({ success: true, data: null });
+    }
+
+    if (invite.toUserId !== userId)
       return ack?.({
         success: false,
         error: "This challenge is no longer live.",
@@ -595,8 +615,6 @@ class TicTacToeController extends ArkosGatewayController {
 
     const invite = ticTacToeService.getInvite(data.inviteId);
 
-    // Its window closed before the answer, so the row settles and the challenger
-    // is never told: they are not waiting on a challenge that can no longer start.
     if (!invite) {
       await notificationService.resolveByInvite(userId, data.inviteId, "Declined");
       return ack?.({ success: true });
@@ -614,9 +632,7 @@ class TicTacToeController extends ArkosGatewayController {
         byNickname: invite.toNickname,
         message: `${invite.toNickname} declined your invite.`,
       });
-    } catch {
-      // The sender may have disconnected.
-    }
+    } catch {}
 
     await notificationService.resolveByInvite(userId, invite.id, "Declined");
     await notifierService.challengeResolved({
