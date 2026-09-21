@@ -1,6 +1,7 @@
 import { BaseService } from "arkos/services";
 import type { RankBoard } from "@prisma/client";
 import championshipService from "../championship/championship.service";
+import gameService from "../game/game.service";
 import playerService from "../player/player.service";
 import notificationService from "./notification.service";
 import notifierService from "./notifier.service";
@@ -8,18 +9,11 @@ import { BOARDS, type Place } from "./utils/leaderboards";
 
 const MAPUTO_OFFSET_MS = 2 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** How long a brand new account is welcomed before it is left to find its own way. */
 const FRESH_DAYS = 7;
-
-/** A snapshot older than this says nothing about today. */
 const SNAPSHOT_KEEP_DAYS = 14;
-
-/** Saturday and Sunday: the eve of the last day, and the last day itself. */
 const CRITICAL_WEEKDAYS = [6, 0];
 const FINAL_WEEKDAY = 0;
 
-/** 00:00 Africa/Maputo on the day `at` falls in. */
 function maputoDay(at: Date) {
   const local = new Date(at.getTime() + MAPUTO_OFFSET_MS);
 
@@ -33,7 +27,6 @@ function maputoWeekday(at: Date) {
   return new Date(at.getTime() + MAPUTO_OFFSET_MS).getUTCDay();
 }
 
-/** A real player, with the mailbox the nudge falls back to. */
 interface Human {
   id: string;
   userId: string;
@@ -43,26 +36,22 @@ interface Human {
   user: { email: string };
 }
 
-/** Where a player stands on one board, and which way they moved since the last snapshot. */
 interface Standing {
   board: RankBoard;
   rank: number;
   move: number | null;
 }
 
-/** What one run knows about one player before deciding anything. */
 interface Seen {
   championship?: Standing;
   global?: Standing;
   playedToday: boolean;
-  /** Turned out for this championship week or the one before it. */
   enrolled: boolean;
   fresh: boolean;
   critical: boolean;
   finalDay: boolean;
 }
 
-/** One message a day to a player who has gone quiet, and the championship's weekend over it. */
 class DailyNudgeService extends BaseService<"rank-snapshot"> {
   async run(at: Date = new Date()) {
     const day = maputoDay(at);
@@ -107,7 +96,6 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
     await this.prune(day);
   }
 
-  /** The single most important thing this player could be told today, or nothing. */
   private async nudge(player: Human, seen: Seen) {
     const contact = {
       userId: player.userId,
@@ -115,7 +103,6 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
       nickname: player.nickname,
     };
 
-    // A championship day outranks everything, even having already played today.
     if (seen.critical && seen.championship)
       return notifierService.championshipStatus({
         ...contact,
@@ -125,11 +112,9 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
         finalDay: seen.finalDay,
       });
 
-    // Never played: the first week is the only one where a welcome is worth sending.
     if (player.xp === 0)
       return seen.fresh ? notifierService.newAccount(contact) : undefined;
 
-    // Already at the board today, or long gone from it.
     if (seen.playedToday) return;
     if (!seen.enrolled && !seen.fresh) return;
 
@@ -159,18 +144,17 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
     );
   }
 
-  /** Everyone who has started a match since the day began, at either end of it. */
   private async playedToday(playerIds: string[], day: Date) {
-    const games = await this.prisma.game.findMany({
-      where: {
+    const games = await gameService.findMany(
+      {
         createdAt: { gte: day },
         OR: [
           { playerOneId: { in: playerIds } },
           { playerTwoId: { in: playerIds } },
         ],
       },
-      select: { playerOneId: true, playerTwoId: true },
-    });
+      { select: { playerOneId: true, playerTwoId: true } }
+    );
 
     return new Set(
       games.flatMap((game) => [game.playerOneId, game.playerTwoId])
@@ -185,17 +169,17 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
     return new Map(boards);
   }
 
-  /** The last place each player was written down at, one day or more ago. */
   private async remembered(playerIds: string[], day: Date) {
-    const rows = await this.prisma.rankSnapshot.findMany({
-      where: { playerId: { in: playerIds }, day: { lt: day } },
-      orderBy: { day: "desc" },
-      select: { playerId: true, board: true, rank: true },
-    });
+    const rows = await this.findMany(
+      { playerId: { in: playerIds }, day: { lt: day } },
+      {
+        orderBy: { day: "desc" },
+        select: { playerId: true, board: true, rank: true },
+      }
+    );
 
     const latest = new Map<string, number>();
 
-    // Newest first, so the first row seen for a player is the last one we wrote.
     for (const row of rows) {
       const key = `${row.playerId}:${row.board}`;
       if (!latest.has(key)) latest.set(key, row.rank);
@@ -222,7 +206,6 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
     };
   }
 
-  /** Written for everyone, so tomorrow's nudge has a yesterday to measure against. */
   private async snapshot(
     players: Human[],
     ranks: Map<RankBoard, Map<string, Place>>,
@@ -240,17 +223,17 @@ class DailyNudgeService extends BaseService<"rank-snapshot"> {
 
     if (!data.length) return;
 
-    // SQLite has no upsert-many, so the day is cleared and rewritten instead.
-    await this.prisma.rankSnapshot.deleteMany({
-      where: { playerId: { in: players.map((player) => player.id) }, day },
+    await this.deleteMany({
+      playerId: { in: players.map((player) => player.id) },
+      day,
     });
 
-    await this.prisma.rankSnapshot.createMany({ data });
+    await this.createMany(data);
   }
 
   private async prune(day: Date) {
-    await this.prisma.rankSnapshot.deleteMany({
-      where: { day: { lt: new Date(day.getTime() - SNAPSHOT_KEEP_DAYS * DAY_MS) } },
+    await this.deleteMany({
+      day: { lt: new Date(day.getTime() - SNAPSHOT_KEEP_DAYS * DAY_MS) },
     });
   }
 }

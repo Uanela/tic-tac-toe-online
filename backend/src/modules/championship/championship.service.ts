@@ -201,23 +201,19 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
       }));
   }
 
-  /**
-   * Which of `playerIds` turned out for any of `periods`. Asked without the sort, the
-   * tie-breaks or the contacts, because the only question here is who showed up.
-   */
   async playedIn(
     periods: ChampionshipBounds[],
     playerIds: string[]
   ): Promise<Set<string>> {
     if (playerIds.length === 0) return new Set();
 
-    const rows = await this.prisma.playerChampionshipStats.findMany({
-      where: {
+    const rows = await this.findMany(
+      {
         startedAt: { in: periods.map((period) => period.startedAt) },
         playerId: { in: playerIds },
       },
-      select: { playerId: true },
-    });
+      { select: { playerId: true } }
+    );
 
     return new Set(rows.map((row) => row.playerId));
   }
