@@ -12,10 +12,9 @@ import ticTacToeService, {
 import playerService from "../../player/player.service";
 import playerBotService from "../../player/player-bot.service";
 import { NotFoundError } from "arkos/error-handler";
-import { emailService } from "arkos/services";
 import userService from "../../user/user.service";
-import challengeEmail from "../utils/email-templates/challenge.email";
-import notificationPreferenceService from "../../notification-preference/notification-preference.service";
+import notifierService from "../../notification/notifier.service";
+import notificationService from "../../notification/notification.service";
 import botService from "../services/bot.service";
 
 /** Every ack answers with `success`; the failures add a reason, the successes their payload. */
@@ -466,11 +465,11 @@ class TicTacToeController extends ArkosGatewayController {
 
       socket.emit("invite_expired", {
         inviteId,
-        message: `${targetPlayer.nickname} did not respond in time.`,
+        message: `${targetPlayer.nickname} did not pick it up.`,
       });
       socket.to(targetSocketId).emit("invite_expired", {
         inviteId,
-        message: `Invite from ${player.nickname} expired.`,
+        message: `Too late to take ${player.nickname}'s challenge — challenge them back.`,
       });
     }, INVITE_TIMEOUT_MS);
 
@@ -497,22 +496,20 @@ class TicTacToeController extends ArkosGatewayController {
       expiresAt: invite.expiresAt,
     });
 
-    const targetOnline =
-      (await socket.user(data.targetUserId).activeRooms()).length > 0;
-    if (
-      !targetIsBot &&
-      !targetOnline &&
-      (await notificationPreferenceService.canNotify(
-        data.targetUserId,
-        "Challenge",
-      ))
-    )
-      emailService
-        .send({
-          to: targetUser.email,
-          ...challengeEmail(player, targetPlayer, inviteId),
+    if (!targetIsBot)
+      notifierService
+        .challengeReceived({
+          toUserId: data.targetUserId,
+          toEmail: targetUser.email,
+          toNickname: targetPlayer.nickname,
+          fromNickname: player.nickname,
+          fromUserId: userId,
+          inviteId,
+          expiresAt: invite.expiresAt,
         })
         .catch(console.error);
+
+    socket.user(data.targetUserId).emit("notification");
 
     ack?.({ success: true, data: { inviteId, expiresAt: invite.expiresAt } });
 
@@ -541,12 +538,32 @@ class TicTacToeController extends ArkosGatewayController {
     ack?: Ack<GameState | null>,
   ) => {
     const userId = socket.currentUser!.id;
-    const invite = ticTacToeService.getInvite(data?.inviteId);
+    const inviteId = data?.inviteId;
 
-    if (!invite || invite.toUserId !== userId)
+    if (!inviteId)
+      return ack?.({ success: false, error: "Invite not found." });
+
+    const invite = ticTacToeService.getInvite(inviteId);
+
+    if (!invite) {
+      const lapsed = await notificationService.lapsedInvite(userId, inviteId);
+
+      if (!lapsed?.fromUserId)
+        return ack?.({
+          success: false,
+          error: "This challenge is no longer live.",
+        });
+
+      await notificationService.resolveByInvite(userId, inviteId, "Accepted");
+      await this.sendInvite(socket, { targetUserId: lapsed.fromUserId });
+
+      return ack?.({ success: true, data: null });
+    }
+
+    if (invite.toUserId !== userId)
       return ack?.({
         success: false,
-        error: "Invite not found or already expired.",
+        error: "This challenge is no longer live.",
       });
 
     if (await this.activeRoomId(socket, userId))
@@ -571,6 +588,19 @@ class TicTacToeController extends ArkosGatewayController {
       success: true,
       data: gameState,
     });
+
+    await notificationService.resolveByInvite(userId, invite.id, "Accepted");
+    notifierService
+      .challengeResolved({
+        toUserId: invite.fromUserId,
+        fromNickname: invite.toNickname,
+        fromUserId: userId,
+        inviteId: invite.id,
+        accepted: true,
+      })
+      .catch(console.error);
+
+    socket.user(invite.fromUserId).emit("notification");
   };
 
   declineInvite = async (
@@ -579,9 +609,18 @@ class TicTacToeController extends ArkosGatewayController {
     ack?: Ack,
   ) => {
     const userId = socket.currentUser!.id;
-    const invite = ticTacToeService.getInvite(data?.inviteId);
 
-    if (!invite || invite.toUserId !== userId)
+    if (!data?.inviteId)
+      return ack?.({ success: false, error: "Invite not found." });
+
+    const invite = ticTacToeService.getInvite(data.inviteId);
+
+    if (!invite) {
+      await notificationService.resolveByInvite(userId, data.inviteId, "Declined");
+      return ack?.({ success: true });
+    }
+
+    if (invite.toUserId !== userId)
       return ack?.({ success: false, error: "Invite not found." });
 
     clearTimeout(invite.timer);
@@ -593,9 +632,18 @@ class TicTacToeController extends ArkosGatewayController {
         byNickname: invite.toNickname,
         message: `${invite.toNickname} declined your invite.`,
       });
-    } catch {
-      // The sender may have disconnected.
-    }
+    } catch {}
+
+    await notificationService.resolveByInvite(userId, invite.id, "Declined");
+    await notifierService.challengeResolved({
+      toUserId: invite.fromUserId,
+      fromNickname: invite.toNickname,
+      fromUserId: userId,
+      inviteId: invite.id,
+      accepted: false,
+    });
+
+    socket.user(invite.fromUserId).emit("notification");
 
     ack?.({ success: true });
   };

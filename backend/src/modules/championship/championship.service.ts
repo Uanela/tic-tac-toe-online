@@ -201,6 +201,23 @@ class ChampionshipService extends BaseService<"player-championship-stats"> {
       }));
   }
 
+  async playedIn(
+    periods: ChampionshipBounds[],
+    playerIds: string[]
+  ): Promise<Set<string>> {
+    if (playerIds.length === 0) return new Set();
+
+    const rows = await this.findMany(
+      {
+        startedAt: { in: periods.map((period) => period.startedAt) },
+        playerId: { in: playerIds },
+      },
+      { select: { playerId: true } }
+    );
+
+    return new Set(rows.map((row) => row.playerId));
+  }
+
   /**
    * The week that just ended. Older weeks are left alone rather than mailed late,
    * so a long outage skips a close-out instead of announcing a stale champion.

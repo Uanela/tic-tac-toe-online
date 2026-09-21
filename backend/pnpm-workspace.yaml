@@ -1,8 +1,11 @@
 allowBuilds:
+  # Neither needs its install script: firebase ships prebuilt, and protobufjs only links its CLI.
+  '@firebase/util': false
   '@prisma/client': true
   '@prisma/engines': true
   esbuild: true
   prisma: true
+  protobufjs: false
   sharp: true
   vue-demi: true
 minimumReleaseAgeExclude:

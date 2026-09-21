@@ -1,0 +1,14 @@
+model RankSnapshot {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  board RankBoard
+  rank  Int
+  day   DateTime
+
+  @@unique([playerId, board, day])
+  @@index([day])
+}

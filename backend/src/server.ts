@@ -3,6 +3,7 @@ import http from "node:http";
 import { Server } from "socket.io";
 import gateway from "./gateway";
 import startCron from "./utils/start-cron";
+import { setIo } from "./utils/feed-ping";
 
 await app.build();
 
@@ -16,5 +17,6 @@ const io = new Server(server, {
 });
 
 gateway.register(io);
+setIo(io);
 
 app.listen(server);

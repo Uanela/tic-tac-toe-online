@@ -1,0 +1,44 @@
+model Notification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type NotificationType
+
+  inviteId     String?
+  fromNickname String?
+  fromUserId   String?
+  expiresAt    DateTime?
+
+  rank Int?
+
+  move Int?
+
+  board RankBoard?
+
+  outcome      NotificationOutcome?
+  outcomeAt    DateTime?
+  readAt       DateTime?
+
+  @@index([userId, createdAt])
+  @@index([userId, type, outcome])
+}
+
+enum NotificationType {
+  ChallengeReceived
+  ChallengeAccepted
+  ChallengeDeclined
+  ChampionshipRankDropped
+  GlobalRankDropped
+  ComeBack
+  NewAccount
+  ChampionshipStatus
+}
+
+enum NotificationOutcome {
+  Accepted
+  Declined
+}

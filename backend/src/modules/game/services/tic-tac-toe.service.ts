@@ -5,8 +5,8 @@ import {
 } from "arkos/error-handler";
 import playerService, { GameOutcome } from "../../../modules/player/player.service";
 import championshipService from "../../../modules/championship/championship.service";
+import rankAlertService from "../../../modules/notification/rank-alert.service";
 import gameService from "../game.service";
-import { ArkosSocket } from "arkos/websockets";
 
 export type Mark = "X" | "O";
 export type Cell = Mark | null;
@@ -112,10 +112,11 @@ class TicTacToeService {
     this.invites.delete(id);
   }
 
-  findInviteBySocket(socketId: string) {
+  /** Only the sender's socket: a challenge outlives the recipient's tab, which is what
+   *  lets one reopened from a push still be answered. */
+  findSentInviteBySocket(socketId: string) {
     for (const inv of this.invites.values()) {
-      if (inv.fromSocketId === socketId || inv.toSocketId === socketId)
-        return inv;
+      if (inv.fromSocketId === socketId) return inv;
     }
     return null;
   }
@@ -239,6 +240,10 @@ class TicTacToeService {
       ),
       championshipService.recordGame(outcomes),
     ]);
+
+    rankAlertService
+      .check(outcomes.map(({ playerId }) => playerId))
+      .catch((error) => console.error("[rank-alert] post-match check failed", error));
   }
 
   /**
@@ -355,22 +360,15 @@ class TicTacToeService {
   }
 
   cancelInviteByScoket(socketId: string) {
-    const invite = ticTacToeService.findInviteBySocket(socketId);
-    if (invite) {
-      clearTimeout(invite.timer);
-      ticTacToeService.deleteInvite(invite.id);
+    const invite = ticTacToeService.findSentInviteBySocket(socketId);
+    if (!invite) return;
 
-      const otherSocketId =
-        invite.fromSocketId === socketId
-          ? invite.toSocketId
-          : invite.fromSocketId;
+    clearTimeout(invite.timer);
+    ticTacToeService.deleteInvite(invite.id);
 
-      try {
-        return { pendingInvite: { id: invite.id, otherSocketId } };
-      } catch {
-        /* ignore */
-      }
-    }
+    return {
+      pendingInvite: { id: invite.id, otherSocketId: invite.toSocketId },
+    };
   }
 }
 
