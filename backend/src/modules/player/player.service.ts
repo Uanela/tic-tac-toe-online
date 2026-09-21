@@ -3,6 +3,10 @@ import type { Prisma } from "@prisma/client";
 
 export const XP_PER_RESULT = { win: 50, draw: 15, loss: 5 } as const;
 
+/** Ties in XP are settled by who signed up first, so equal scores hold one order
+ *  between the page that shows the ranking and the alerts that watch its top ten. */
+export const RANKING_ORDER = [{ xp: "desc" }, { createdAt: "asc" }] as const;
+
 export type GameOutcome = keyof typeof XP_PER_RESULT;
 
 /** How much of a player's history one page of a profile carries, and the ceiling a caller may ask for. */
@@ -80,7 +84,7 @@ class PlayerService extends BaseService<"player"> {
       this.findMany(
         {},
         {
-          orderBy: { xp: "desc" },
+          orderBy: [...RANKING_ORDER],
           skip,
           take: limit,
           include: { user: { select: { email: true } } },
