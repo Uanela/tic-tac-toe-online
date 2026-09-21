@@ -1,0 +1,51 @@
+model Notification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type NotificationType
+
+  /// The live invite this row describes, which is gone from memory once its window closes.
+  inviteId     String?
+  fromNickname String?
+  fromUserId   String?
+  expiresAt    DateTime?
+
+  /// Where a rank alert left them, which is the whole of what it has to say.
+  /// The place the player fell to, not the size of the fall.
+  rank Int?
+
+  /// Places gained since the previous day's snapshot, for the daily nudge.
+  /// Positive is a climb, negative a fall, null when there is no day to compare to.
+  move Int?
+
+  /// Which board a nudge's `rank` belongs to. Null for everything else.
+  board RankBoard?
+
+  /// Set once the receiver accepts, declines, or is otherwise done with it.
+  outcome      NotificationOutcome?
+  outcomeAt    DateTime?
+  readAt       DateTime?
+
+  @@index([userId, createdAt])
+  @@index([userId, type, outcome])
+}
+
+enum NotificationType {
+  ChallengeReceived
+  ChallengeAccepted
+  ChallengeDeclined
+  ChampionshipRankDropped
+  GlobalRankDropped
+  ComeBack
+  NewAccount
+  ChampionshipStatus
+}
+
+enum NotificationOutcome {
+  Accepted
+  Declined
+}

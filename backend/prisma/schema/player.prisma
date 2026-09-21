@@ -16,6 +16,8 @@ model Player {
   gamesAsPlayerOne Game[]          @relation("PlayerOne")
   gamesAsPlayerTwo Game[]          @relation("PlayerTwo")
   championshipStats PlayerChampionshipStats[]
+  rankWatches      RankWatch[]
+  rankSnapshots    RankSnapshot[]
 }
 
 enum PlayerType {
