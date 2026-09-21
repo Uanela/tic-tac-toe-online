@@ -1,4 +1,3 @@
-# Neither needs its install script: firebase ships prebuilt, and protobufjs only links its CLI.
 allowBuilds:
   '@firebase/util': false
   protobufjs: false

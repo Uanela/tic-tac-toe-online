@@ -1,7 +1,3 @@
-/// A player's remembered place on a leaderboard, kept so the next check can tell a
-/// fall from a standing still. The row is rewritten every time the place moves, so
-/// whatever it holds is the place the player has last been told about — which is
-/// what keeps the same fall from being reported again on every check.
 model RankWatch {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -12,7 +8,6 @@ model RankWatch {
 
   board RankBoard
 
-  /// Where the player stood when this row was last written.
   rank Int
 
   @@unique([playerId, board])

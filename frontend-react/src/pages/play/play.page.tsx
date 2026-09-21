@@ -263,7 +263,6 @@ export default function PlayPage() {
 
   const inviteId = searchParams.get("inviteId") || null;
 
-  // Also what a push opened the app on, so it waits behind the leave confirmation while a match is live.
   const promptInvite = boardLive ? inviteId : null;
 
   const acceptInvite = useCallback(
@@ -284,10 +283,6 @@ export default function PlayPage() {
     [acceptInviteEmitter, setSearchParams, toast],
   );
 
-  // An answer given in the toast: it waits behind the leave confirmation while a match is
-  // live, exactly as a challenge taken from the play screen always has. Claimed by id
-  // rather than by the parameter, so a rerender between the ask and the answer — the
-  // emitter's own loading state is enough — cannot ask the same dead invite twice.
   const answeredInvite = useRef<string | null>(null);
 
   useEffect(() => {

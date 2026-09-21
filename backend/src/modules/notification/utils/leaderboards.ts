@@ -2,16 +2,13 @@ import type { RankBoard } from "@prisma/client";
 import championshipService from "../../championship/championship.service";
 import playerService, { RANKING_ORDER } from "../../player/player.service";
 
-/** Where a player stands on a board, and who to tell about it. */
 export interface Place {
   userId: string;
   rank: number;
 }
 
-/** One leaderboard, asked the same question so both are read the same way. */
 export interface Leaderboard {
   board: RankBoard;
-  /** Every place on the board at once, so a whole sweep reads off a single query. */
   ranks(): Promise<Map<string, Place>>;
 }
 

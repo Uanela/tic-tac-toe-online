@@ -241,9 +241,6 @@ class TicTacToeService {
       championshipService.recordGame(outcomes),
     ]);
 
-    // This match may be the one that cost either player places on a board, and the
-    // hourly sweep would land that news up to an hour late. Left unawaited: the
-    // result is already written, and the room is closing on the players' sockets.
     rankAlertService
       .check(outcomes.map(({ playerId }) => playerId))
       .catch((error) => console.error("[rank-alert] post-match check failed", error));

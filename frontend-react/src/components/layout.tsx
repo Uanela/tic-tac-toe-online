@@ -48,8 +48,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
     } catch (err) {
       console.log(err);
     }
-    // A previously granted browser still has to hand the server its installation, which
-    // also covers one that was reset since (the FID rotates).
     pushService.sync().catch((err) => console.log(err));
   }, [user]);
 
@@ -58,8 +56,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
     { ack: true, timeout: 6000 }
   );
 
-  // `accept=1` is the player having answered in the toast, which is what tells the play
-  // screen to join straight away instead of putting the challenge to them a second time.
   function handleAcceptInvite(inviteId: string) {
     toast.dismiss(inviteKey(inviteId));
     navigate(`/play?inviteId=${inviteId}&accept=1`);
@@ -70,8 +66,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
     toast.dismiss(inviteKey(inviteId));
   }
 
-  /** The question a challenge asks, which is the same one whether the socket brought
-   *  it or a push opened the app on it. */
   function offerInvite(invite: {
     inviteId: string;
     nickname: string;
@@ -114,9 +108,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
     });
   });
 
-  // A push can only open the app; it cannot answer for the player. The challenge it
-  // carries is raised as the same offer, so the question is asked in one place and
-  // answered the same way whether the app was already open or not.
   useEffect(() => {
     const inviteId = searchParams.get("inviteId");
 
@@ -125,7 +116,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
     const row = invitations.find((invitation) => invitation.inviteId === inviteId);
     const expiresAt = row?.expiresAt ? new Date(row.expiresAt).getTime() : 0;
 
-    // The offer has taken it over, which is why the parameter does not outlive it.
     setSearchParams(
       (params) => {
         params.delete("inviteId");
@@ -143,7 +133,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
       return;
     }
 
-    // Past its window there is nothing left to answer, only the way back.
     const fromUserId = row?.fromUserId;
 
     toast.show({
@@ -184,7 +173,6 @@ export function Layout({ children }: { children: React.ReactNode; }) {
   });
 
   game.on<GameServerState>("game_state", (data) => {
-    // A match starting uses up every open offer, including one answered from the notifications tab.
     offerKeys.current.forEach(toast.dismiss);
     offerKeys.current = [];
     navigate(`/play?gameScreen=game&gameState=${JSON.stringify(data)}`);

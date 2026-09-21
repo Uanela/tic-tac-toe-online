@@ -2,8 +2,6 @@ import { ArkosRouter, RouteHook } from "arkos";
 import { z } from "zod";
 import notificationController from "./notification.controller";
 
-// A notification is only ever read by the player it belongs to, and created by the
-// challenge flow. The generated CRUD would expose every player's feed.
 export const hook: RouteHook = {
   findMany: { disabled: true },
   findOne: { disabled: true },

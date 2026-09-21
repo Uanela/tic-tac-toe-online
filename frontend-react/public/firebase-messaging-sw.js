@@ -14,7 +14,6 @@ firebase.initializeApp({
   appId: params.get("appId"),
 });
 
-/** Whether a tab is on screen, which is the only thing that decides if this shows. */
 async function visibleClient() {
   const clients = await self.clients.matchAll({
     type: "window",
@@ -24,13 +23,9 @@ async function visibleClient() {
   return clients.some((client) => client.visibilityState === "visible");
 }
 
-// A page that is on screen draws its own toast, so a notification here would be the
-// same news twice; it is only ever wanted when nobody is looking.
 firebase.messaging().onBackgroundMessage(async (payload) => {
   if (await visibleClient()) return;
 
-  // A message sent from the Firebase console carries `notification`, ours carries
-  // `data`. Reading both is what keeps a test send from arriving as "undefined".
   const message = payload.data || payload.notification || {};
 
   self.registration.showNotification(

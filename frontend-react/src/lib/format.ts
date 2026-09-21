@@ -12,7 +12,6 @@ export function formatDate(value: string | Date): string {
   );
 }
 
-/** How long ago, in words: a feed reads "há 5 minutos", not a timestamp it has to subtract. */
 export function formatRelative(value: string | Date): string {
   const format = new Intl.RelativeTimeFormat(getLocale(), { numeric: "auto" });
   let amount = (new Date(value).getTime() - Date.now()) / 1000;

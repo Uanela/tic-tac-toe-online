@@ -1,5 +1,3 @@
-/// Where a player stood on a board when the daily nudge ran. One row per player, per
-/// board, per day is what lets the next day's nudge say which way they moved.
 model RankSnapshot {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -9,7 +7,6 @@ model RankSnapshot {
 
   board RankBoard
   rank  Int
-  /// The Africa/Maputo day the snapshot belongs to, at its 00:00.
   day   DateTime
 
   @@unique([playerId, board, day])

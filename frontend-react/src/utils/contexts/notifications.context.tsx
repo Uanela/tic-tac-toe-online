@@ -21,11 +21,8 @@ export interface NotificationRow {
   fromNickname: string | null;
   fromUserId: string | null;
   expiresAt: string | null;
-  /** Where a rank alert left the player, which is the whole of what it has to say. */
   rank: number | null;
-  /** Places gained since yesterday, for the nudges that carry a movement. */
   move: number | null;
-  /** The board `rank` is a place on, for the nudges that are about one. */
   board: "Championship" | "Global" | null;
   outcome: "Accepted" | "Declined" | null;
   readAt: string | null;
@@ -39,7 +36,6 @@ interface Feed {
 }
 
 interface NotificationsValue extends Feed {
-  /** False until the first fetch lands, which is what tells an absent invite apart from an unread feed. */
   loaded: boolean;
   refresh: () => Promise<void>;
   markRead: () => Promise<void>;
@@ -91,7 +87,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [user, refresh]);
 
-  // The server's only job here is to say the feed changed; the row it wrote is the source of truth.
   game.on("notification", refresh);
 
   return (

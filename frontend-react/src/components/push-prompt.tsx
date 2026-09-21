@@ -7,8 +7,6 @@ import styles from "./push-prompt.module.css";
 
 const DISMISSED_KEY = "push-prompt-dismissed";
 
-/** Asked once the player has a result on the board: a browser that has never played
- *  has nothing to be pinged about, and a denied prompt cannot be taken back. */
 export function PushPrompt() {
   const { player } = useAuth();
   const [asking, setAsking] = useState(false);

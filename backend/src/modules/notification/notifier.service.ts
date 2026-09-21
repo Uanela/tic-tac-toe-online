@@ -18,12 +18,10 @@ interface Challenge {
   inviteId: string;
 }
 
-/** Only a fresh invite has a window: once it is answered the row behind it is history. */
 interface ReceivedChallenge extends Challenge {
   expiresAt: number;
 }
 
-/** Each leaderboard a player can fall on says so in its own words. */
 const RANK_DROP = {
   Championship: {
     type: "ChampionshipRankDropped",
@@ -35,20 +33,17 @@ const RANK_DROP = {
   },
 } as const;
 
-/** Where a player stands, when a nudge has something to say about it. */
 interface Standing {
   board?: RankBoard | null;
   rank?: number | null;
   move?: number | null;
 }
 
-/** Each board a nudge can talk about, in the words its sentence needs. */
 const BOARD_NAME = {
   Championship: "campeonato da semana",
   Global: "ranking global",
 } as const;
 
-/** " (subiu 2 lugares)", " (caiu 1 lugar)", or nothing when there is no yesterday. */
 function movement(move?: number | null) {
   if (!move) return "";
 
@@ -57,22 +52,18 @@ function movement(move?: number | null) {
   return move > 0 ? ` (subiu ${move} ${places})` : ` (caiu ${-move} ${places})`;
 }
 
-/** Who a nudge is addressed to, and where else they can be reached. */
 interface Contact {
   userId: string;
   email: string;
   nickname: string;
 }
 
-/** A nudge, once its copy has been picked. */
 interface Engagement extends Contact, Standing {
   type: "ComeBack" | "NewAccount" | "ChampionshipStatus";
   title: string;
   body: string;
 }
 
-/** The one place a player is told something happened. Every channel decision lives
- *  here so a new notification type cannot invent its own delivery rules. */
 class NotifierService {
   async challengeReceived(challenge: ReceivedChallenge) {
     await notificationService.createOne({
@@ -106,7 +97,6 @@ class NotifierService {
       .catch(console.error);
   }
 
-  /** Only ever called for an invite still inside its window, so a lapsed one reaches nobody. */
   async challengeResolved(
     challenge: Omit<Challenge, "toEmail" | "toNickname"> & { accepted: boolean },
   ) {
@@ -127,8 +117,6 @@ class NotifierService {
     });
   }
 
-  /** A rank alert is worth a browser push but never an email: it is the app's own
-   *  standing that moved, and a mailbox reminder of a bad week is not wanted. */
   async rankDropped(alert: { board: RankBoard; userId: string; rank: number }) {
     const copy = RANK_DROP[alert.board];
 
@@ -147,7 +135,6 @@ class NotifierService {
     });
   }
 
-  /** A player who has gone quiet, told where they stand on the board that fits. */
   async comeBack(nudge: Contact & Standing) {
     const where =
       nudge.board && nudge.rank
@@ -162,7 +149,6 @@ class NotifierService {
     });
   }
 
-  /** Signed up, never played. Only ever sent inside their first week. */
   async newAccount(nudge: Contact) {
     await this.engage({
       ...nudge,
@@ -172,7 +158,6 @@ class NotifierService {
     });
   }
 
-  /** The weekend of a championship, which outranks whatever else today had to say. */
   async championshipStatus(
     nudge: Contact & Required<Standing> & { finalDay: boolean },
   ) {
@@ -188,7 +173,6 @@ class NotifierService {
     });
   }
 
-  /** In-app row first, then push, then mail for whoever push could not reach. */
   private async engage(nudge: Engagement) {
     await notificationService.createOne({
       userId: nudge.userId,
@@ -208,7 +192,6 @@ class NotifierService {
       url: `${APP_URL}/play`,
     });
 
-    // Having refused push is a no to the other channel too: only a challenge mails them.
     if (pushed || !(await pushInstallationService.emailAllowed(nudge.userId)))
       return;
 

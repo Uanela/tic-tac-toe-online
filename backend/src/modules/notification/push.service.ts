@@ -14,12 +14,9 @@ const DEAD_INSTALLATION_CODES = [
   "messaging/invalid-argument",
 ];
 
-// Data-only on purpose: the service worker decides what to show, which is the only
-// way it can suppress a notification for a tab the user is already looking at.
 class PushService {
   private app: App | null | undefined;
 
-  /** Absent service-account env leaves this null, and every send quietly does nothing. */
   private client() {
     if (this.app === undefined) {
       const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -31,7 +28,6 @@ class PushService {
     return this.app;
   }
 
-  /** False when the user has no registered browser, which is the signal to fall back to email. */
   async sendToUser(userId: string, message: PushMessage) {
     const client = this.client();
     if (!client) return false;

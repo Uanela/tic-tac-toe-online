@@ -60,8 +60,6 @@ export default function NotificationsPage() {
     if (row.inviteId) await declineInviteEmitter.emit({ inviteId: row.inviteId }, { ack: true });
   }
 
-  // The play screen picks this up and sends the challenge, so the countdown and the
-  // cancel control live in the one place that already owns them.
   function challengeBack(row: NotificationRow) {
     navigate(`/play?challenge=${row.fromUserId}`);
   }
@@ -160,8 +158,6 @@ function InvitationRow({
 
   useInterval(() => setLapsed(expiresAt <= Date.now()), lapsed ? null : 500);
 
-  // Past its window the challenge cannot start, so the only move left is to send one
-  // back. Declining is not one of them: there is nothing left to refuse.
   if (lapsed)
     return (
       <div className={styles.row}>
@@ -223,7 +219,6 @@ type ActivityKind =
   | "welcome"
   | "answered";
 
-/** What the row is worth reading as, which the icon and its colour both key off. */
 function activityKind(row: NotificationRow): ActivityKind {
   if (row.type === "ChallengeAccepted") return "accepted";
   if (row.type === "ChallengeDeclined") return "declined";
@@ -250,7 +245,6 @@ function activityIcon(row: NotificationRow) {
   }
 }
 
-/** " (subiu 2)", left off entirely on a first nudge that has no yesterday. */
 function moveSuffix(move: number | null) {
   if (!move) return "";
 
@@ -281,7 +275,6 @@ function activitySentence(row: NotificationRow) {
       return m.inbox_new_account();
     case "ChampionshipStatus":
       return m.inbox_championship_status({ rank, move: moveSuffix(row.move) });
-    // An answered invite, kept in the feed as history rather than as a second offer.
     default:
       return row.outcome === "Accepted"
         ? m.inbox_you_accepted({ nickname })

@@ -5,7 +5,6 @@ import {
   escapeHtml,
 } from "../../../../utils/email-layout";
 
-/** The daily nudge: the notifier picks the words, this only frames them. */
 export default function nudgeEmail(
   player: { nickname: string },
   message: { title: string; body: string },
