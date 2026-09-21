@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Swords, Handshake, Trophy, Frown, DoorOpen, Flag } from "lucide-react";
 import { useGateway } from "@arkosjs/react-websockets";
@@ -261,43 +261,50 @@ export default function PlayPage() {
   // The turn cue starts the tick, so here it only ever needs stopping.
   const boardLive = screen === "game" && gameState?.status === "playing";
 
-  const promptInvite = boardLive ? searchParams.get("inviteId") || null : null;
+  const inviteId = searchParams.get("inviteId") || null;
+
+  // Also what a push opened the app on, so it waits behind the leave confirmation while a match is live.
+  const promptInvite = boardLive ? inviteId : null;
+
+  const acceptInvite = useCallback(
+    async (id: string) => {
+      const result = await acceptInviteEmitter.emit({ inviteId: id }, { ack: true });
+
+      setOverlay(null);
+      setWinningLine(null);
+      setEnding(null);
+      setSearchParams({});
+
+      if (!result?.success)
+        toast.show({
+          variant: "error",
+          description: result?.error ?? m.play_join_invite_missed(),
+        });
+    },
+    [acceptInviteEmitter, setSearchParams, toast],
+  );
+
+  // An answer given in the toast: it waits behind the leave confirmation while a match is
+  // live, exactly as a challenge taken from the play screen always has. Claimed by id
+  // rather than by the parameter, so a rerender between the ask and the answer — the
+  // emitter's own loading state is enough — cannot ask the same dead invite twice.
+  const answeredInvite = useRef<string | null>(null);
+
+  useEffect(() => {
+    const id = searchParams.get("inviteId");
+
+    if (!id || boardLive || searchParams.get("accept") !== "1") return;
+    if (answeredInvite.current === id) return;
+
+    answeredInvite.current = id;
+    acceptInvite(id);
+  }, [searchParams, boardLive, acceptInvite]);
 
   useEffect(() => {
     if (!boardLive) stopLoop("clockTicking");
   }, [boardLive, stopLoop]);
 
   useEffect(() => () => stopLoop("clockTicking"), [stopLoop]);
-
-  // A challenge waits behind the confirmation while a match is live, so this reruns once the player is out of one.
-  useEffect(() => {
-    const inviteId = searchParams.get("inviteId");
-
-    if (!inviteId || boardLive) return;
-
-    async function accept() {
-      if (!inviteId) return;
-
-      const result = await acceptInviteEmitter.emit(
-        { inviteId },
-        { ack: true },
-      );
-      setOverlay(null);
-      setWinningLine(null);
-      setEnding(null);
-
-      if (!result?.success && inviteId) {
-        toast.show({
-          variant: "error",
-          description: result?.error ?? m.play_join_invite_expired(),
-        });
-        return;
-      }
-      setSearchParams({ inviteId: "" });
-    }
-
-    accept();
-  }, [searchParams, boardLive]);
 
   // A challenge sent from a player card on another page arrives as a parameter, here, where its countdown and cancel live.
   useEffect(() => {
